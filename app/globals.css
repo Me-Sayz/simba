@@ -58,10 +58,35 @@ select option {
 /* Sidebar colors */
 :root {
   --sidebar-bg: #22293d;
+  --terong: #5B21B6;
+  --terong-deep: #2E1065;
+  --terong-soft: #EDE6FB;
+  --daun: #059669;
+  --daun-soft: #DCFCE7;
+  --amber-c: #D97706;
+  --amber-soft: #FEF3C7;
+  --merah-c: #DC2626;
+  --merah-soft: #FEE2E2;
 }
 
 .dark {
   --sidebar-bg: #0f1117;
+  --terong-soft: #2b2145;
+  --daun-soft: #052e21;
+  --amber-soft: #3a2a0a;
+  --merah-soft: #3a1212;
+}
+
+@theme inline {
+  --color-terong: var(--terong);
+  --color-terong-deep: var(--terong-deep);
+  --color-terong-soft: var(--terong-soft);
+  --color-daun: var(--daun);
+  --color-daun-soft: var(--daun-soft);
+  --color-amber-c: var(--amber-c);
+  --color-amber-soft: var(--amber-soft);
+  --color-merah-c: var(--merah-c);
+  --color-merah-soft: var(--merah-soft);
 }
 
 .left-logo img {

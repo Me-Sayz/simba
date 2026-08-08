@@ -79,7 +79,7 @@ export default function NotificationPanel({ mode = 'mobile', sidebarCollapsed = 
       ) : (
         // Mobile topbar: hanya icon
         <button onClick={() => setOpen(o => !o)} className="relative p-1">
-          <Bell size={20} className="text-gray-400 hover:text-white transition-colors" />
+          <Bell size={20} className="text-gray-400 hover:text-terong-deep dark:hover:text-gray-200 transition-colors" />
           {unread > 0 && (
             <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center font-medium">
               {unread > 9 ? '9+' : unread}

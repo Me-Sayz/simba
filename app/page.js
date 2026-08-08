@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { Package, ArrowDownCircle, ArrowUpCircle, AlertTriangle, TrendingUp, Calendar, ChevronDown, Check } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import NotificationPanel from '@/components/NotificationPanel'
 
 function GaugeArc({ pct, color }) {
   const r = 30, cx = 44, cy = 44
@@ -172,12 +173,20 @@ export default function Dashboard() {
 
       {/* Topbar */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{greeting()}, {profile?.name || 'Owner'} 👋</h1>
-          <p className="text-sm text-gray-400 mt-0.5">Berikut ringkasan stok dan aktivitas tokomu hari ini.</p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{greeting()}, {profile?.name || 'Owner'} 👋</h1>
+            <p className="text-sm text-gray-400 mt-0.5">Berikut ringkasan stok dan aktivitas tokomu hari ini.</p>
+          </div>
+          <div className="ml-auto sm:hidden">
+            <NotificationPanel mode="mobile" />
+          </div>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
+          <div className="hidden sm:block">
+            <NotificationPanel mode="mobile" />
+          </div>
           {/* Custom Dropdown */}
           <div className="relative" ref={presetRef}>
             <button
@@ -320,7 +329,7 @@ export default function Dashboard() {
               <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Peringatan Stok</h2>
-                  <Link href="/products" className="text-xs text-blue-600 hover:underline">Lihat</Link>
+                  <Link href="/stock" className="text-xs text-blue-600 hover:underline">Lihat</Link>
                 </div>
                 <div className="flex flex-col gap-3">
                   {lowStockProducts.slice(0, 4).map(p => {
@@ -330,7 +339,7 @@ export default function Dashboard() {
                       <div key={p.id}>
                         <div className="flex items-center justify-between mb-1">
                           <p className="text-xs text-gray-700 dark:text-gray-200 truncate max-w-[140px]">{p.name} (Stok: {p.stock}/{p.min_stock})</p>
-                          <Link href="/stock-in" className="text-xs border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 shrink-0 ml-2">Restock</Link>
+                          <Link href="/stock" className="text-xs border border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 px-2 py-0.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 shrink-0 ml-2">Restock</Link>
                         </div>
                         <div className="w-full bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
                           <div className={`${barColor} h-1.5 rounded-full`} style={{ width: `${Math.min(pct, 100)}%` }} />
@@ -349,7 +358,7 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Barang Masuk Terbaru</h2>
-              <Link href="/stock-in" className="text-xs text-blue-600 hover:underline">Lihat semua</Link>
+              <Link href="/stock" className="text-xs text-blue-600 hover:underline">Lihat semua</Link>
             </div>
             <table className="w-full text-sm">
               <thead>
@@ -381,7 +390,7 @@ export default function Dashboard() {
           <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
               <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Barang Keluar Terbaru</h2>
-              <Link href="/stock-out" className="text-xs text-blue-600 hover:underline">Lihat semua</Link>
+              <Link href="/stock" className="text-xs text-blue-600 hover:underline">Lihat semua</Link>
             </div>
             <table className="w-full text-sm">
               <thead>
