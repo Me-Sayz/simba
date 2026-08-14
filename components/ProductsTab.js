@@ -107,7 +107,7 @@ function CategoryBadge({ category }) {
 }
 
 const inputCls = (hasError) =>
-  `border rounded-xl p-2.5 text-sm w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ${
+  `border rounded-xl p-2.5 text-sm w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-terong transition-colors ${
     hasError ? 'border-rose-400 dark:border-rose-500' : 'border-gray-200 dark:border-gray-700'
   }`
 
@@ -138,10 +138,10 @@ function CustomSelect({ value, onChange, options, placeholder }) {
             onClick={() => { onChange(val); setOpen(false) }}
             className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors whitespace-nowrap
               ${value === val
-                ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-medium'
+                ? 'bg-terong-soft text-terong-deep font-medium'
                 : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             {label}
-            {value === val && <Check size={13} className="ml-auto text-blue-500" />}
+            {value === val && <Check size={13} className="ml-auto text-terong" />}
           </button>
         ))}
       </div>
@@ -198,7 +198,7 @@ export default function ProductsTab() {
       addNotification({
         type: 'low_stock',
         message: `Stok "${p.name}" menipis (${p.stock} ${p.unit || ''} tersisa)`,
-        link: '/products',
+        link: '/stock',
       })
     })
     setFetching(false)
@@ -315,9 +315,11 @@ export default function ProductsTab() {
       else setToast({ type: 'success', text: 'Produk berhasil diupdate' })
       setEditId(null)
     } else {
+      // stock awal dimulai dari 0 — nanti dinaikkan otomatis lewat trigger
+      // stock_movements, biar gak dobel-hitung sama insert stok awal di bawah
       const { data: newProduct, error } = await supabase
         .from('products')
-        .insert({ ...payload, user_id: user.id })
+        .insert({ ...payload, stock: 0, user_id: user.id })
         .select()
         .single()
       if (error) {
@@ -326,12 +328,13 @@ export default function ProductsTab() {
         return
       }
       if (newProduct && parseInt(form.stock) > 0) {
-        await supabase.from('stock_in').insert({
+        await supabase.from('stock_movements').insert({
           product_id: newProduct.id,
+          type: 'in',
           quantity: parseInt(form.stock),
-          buy_price: parseFloat(form.buy_price),
+          unit_price: parseFloat(form.buy_price) || null,
           note: 'Stok awal',
-          date: new Date().toISOString().split('T')[0],
+          movement_date: new Date().toISOString().split('T')[0],
           user_id: user.id,
         })
       }
@@ -339,7 +342,7 @@ export default function ProductsTab() {
       addNotification({
         type: 'new_product',
         message: `Produk baru ditambahkan: ${form.name}`,
-        link: '/products',
+        link: '/stock',
       })
     }
 
@@ -580,7 +583,7 @@ export default function ProductsTab() {
           <div>
             <label className="text-xs text-gray-500 mb-1 block">Foto Produk <span className="text-gray-400 font-normal">(opsional)</span></label>
             <div
-              className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-4 text-center cursor-pointer hover:border-blue-300 transition-colors"
+              className="border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl p-4 text-center cursor-pointer hover:border-terong/40 transition-colors"
               onClick={() => document.getElementById('foto-input').click()}
             >
               {imagePreview
@@ -592,7 +595,7 @@ export default function ProductsTab() {
           </div>
 
           <div className="flex gap-2 pt-2">
-            <button type="submit" disabled={loading} className="flex-1 bg-blue-600 text-white rounded-xl p-2.5 text-sm font-semibold hover:bg-blue-700 disabled:opacity-60">
+            <button type="submit" disabled={loading} className="flex-1 bg-terong text-white rounded-xl p-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-60">
               {loading ? 'Menyimpan...' : editId ? 'Update Produk' : 'Simpan Produk'}
             </button>
             <button type="button" onClick={handleCancel} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
@@ -628,7 +631,7 @@ export default function ProductsTab() {
           </div>
           <button
             onClick={() => { setEditId(null); setForm(getFormDefaults()); setShowForm(true) }}
-            className="flex items-center gap-2 bg-blue-600 text-white text-sm px-4 py-2.5 rounded-xl hover:bg-blue-700 transition-colors font-medium"
+            className="flex items-center gap-2 bg-terong text-white text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-colors font-medium"
           >
             <Plus size={16} /> Tambah Produk
           </button>
@@ -636,11 +639,11 @@ export default function ProductsTab() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-          <div className="bg-blue-50 dark:bg-blue-950/40 rounded-2xl p-4 flex items-center gap-4">
-            <div className="bg-blue-100 dark:bg-blue-900/60 p-3 rounded-xl"><Package size={20} className="text-blue-600 dark:text-blue-400" /></div>
+          <div className="bg-terong-soft rounded-2xl p-4 flex items-center gap-4">
+            <div className="bg-white dark:bg-gray-900 p-3 rounded-xl"><Package size={20} className="text-terong" /></div>
             <div>
-              <p className="text-xs text-blue-500 dark:text-blue-400 mb-0.5">Total Produk:</p>
-              <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{stats.total}</p>
+              <p className="text-xs text-terong-deep/70 mb-0.5">Total Produk:</p>
+              <p className="text-2xl font-bold text-terong-deep dark:text-terong">{stats.total}</p>
             </div>
           </div>
           <div className="bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl p-4 flex items-center gap-4">
@@ -734,7 +737,7 @@ export default function ProductsTab() {
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300">Rp {Number(p.price).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 text-gray-400 hover:text-blue-500 transition-colors"><Pencil size={15} /></button>
+                        <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-terong-soft text-gray-400 hover:text-terong transition-colors"><Pencil size={15} /></button>
                         <button onClick={() => setDeleteTarget(p)} className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-gray-400 hover:text-rose-500 transition-colors"><Trash2 size={15} /></button>
                       </div>
                     </td>
@@ -747,7 +750,7 @@ export default function ProductsTab() {
                       <p className="text-gray-400 text-sm">Tidak ada produk ditemukan</p>
                       <button
                         onClick={() => { setSearch(''); setFilterStatus('all'); setFilterCategory('all') }}
-                        className="mt-3 text-blue-500 text-sm hover:underline"
+                        className="mt-3 text-terong text-sm hover:underline"
                       >
                         Reset filter
                       </button>
@@ -791,7 +794,7 @@ export default function ProductsTab() {
               {p.supplier && <p className="text-xs text-gray-400 mb-1">Supplier: {p.supplier}</p>}
               {p.barcode && <p className="text-xs text-gray-400 font-mono mb-3">{p.barcode}</p>}
               <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <button onClick={() => handleEdit(p)} className="flex-1 flex items-center justify-center gap-1.5 text-blue-500 text-sm py-1.5 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40"><Pencil size={14} /> Edit</button>
+                <button onClick={() => handleEdit(p)} className="flex-1 flex items-center justify-center gap-1.5 text-terong text-sm py-1.5 rounded-lg hover:bg-terong-soft"><Pencil size={14} /> Edit</button>
                 <button onClick={() => setDeleteTarget(p)} className="flex-1 flex items-center justify-center gap-1.5 text-rose-400 text-sm py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40"><Trash2 size={14} /> Hapus</button>
               </div>
             </div>
@@ -818,7 +821,7 @@ export default function ProductsTab() {
                   : <button
                       key={n}
                       onClick={() => setPage(n)}
-                      className={`w-8 h-8 rounded-lg text-sm ${page === n ? 'bg-blue-600 text-white font-medium' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
+                      className={`w-8 h-8 rounded-lg text-sm ${page === n ? 'bg-terong text-white font-medium' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'}`}
                     >
                       {n}
                     </button>
@@ -836,7 +839,7 @@ export default function ProductsTab() {
 
         <button
           onClick={() => { setEditId(null); setForm(getFormDefaults()); setShowForm(true) }}
-          className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-blue-600 text-white rounded-full shadow-lg flex items-center justify-center hover:bg-blue-700 z-40"
+          className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-terong text-white rounded-full shadow-lg flex items-center justify-center hover:opacity-90 z-40"
         >
           <Plus size={24} />
         </button>

@@ -74,19 +74,19 @@ export default function ScanPage() {
         </div>
       )}
 
-      <div className="text-center mb-5">
-        <div className="w-14 h-14 rounded-2xl bg-terong-soft flex items-center justify-center mx-auto mb-3">
-          <ScanLine size={24} className="text-terong" />
-        </div>
+      <div className="text-center mb-4">
         <h1 className="font-bold text-lg text-gray-800 dark:text-gray-100">Scan Produk</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Cek atau update stok cepat lewat kamera</p>
       </div>
 
       {showScanner && (
-        <BarcodeScanner
-          onDetected={handleDetected}
-          onClose={() => setShowScanner(false)}
-        />
+        <div className="mb-4">
+          <BarcodeScanner
+            inline
+            onDetected={handleDetected}
+            onClose={() => setShowScanner(false)}
+          />
+        </div>
       )}
 
       {!showScanner && !product && !notFoundCode && (
@@ -97,7 +97,6 @@ export default function ScanPage() {
           <ScanLine size={18} /> Buka Kamera
         </button>
       )}
-
       {notFoundCode && (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 text-center">
           <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Produk tidak ditemukan</p>

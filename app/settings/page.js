@@ -19,13 +19,13 @@ function Toast({ msg, onClose }) {
 function Toggle({ checked, onChange }) {
   return (
     <button onClick={() => onChange(!checked)}
-      className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${checked ? 'bg-blue-600' : 'bg-gray-200 dark:bg-gray-700'}`}>
+      className={`relative w-11 h-6 rounded-full transition-colors duration-200 focus:outline-none ${checked ? 'bg-terong' : 'bg-gray-200 dark:bg-gray-700'}`}>
       <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-200 ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>
   )
 }
 
-function SectionHeader({ icon: Icon, title, subtitle, iconBg = 'bg-blue-50 dark:bg-blue-950', iconColor = 'text-blue-600' }) {
+function SectionHeader({ icon: Icon, title, subtitle, iconBg = 'bg-terong-soft', iconColor = 'text-terong' }) {
   return (
     <div className="flex items-center gap-3 mb-5">
       <div className={`${iconBg} p-2 rounded-xl`}>
@@ -114,8 +114,8 @@ export default function SettingsPage() {
       {showResetModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm shadow-xl p-6">
-            <div className="w-12 h-12 bg-amber-100 dark:bg-amber-950 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle size={20} className="text-amber-500" />
+            <div className="w-12 h-12 bg-amber-soft rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle size={20} className="text-amber-c" />
             </div>
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-center mb-1">Reset ke Default?</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 text-center mb-6">Semua preferensi akan dikembalikan ke pengaturan awal. Tindakan ini tidak dapat dibatalkan.</p>
@@ -134,7 +134,7 @@ export default function SettingsPage() {
                 localStorage.removeItem('stok-prefs')
                 setShowResetModal(false)
                 setToast({ type: 'success', text: 'Preferensi berhasil direset ke default' })
-              }} className="flex-1 bg-amber-500 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-amber-600">
+              }} className="flex-1 bg-amber-c text-white rounded-xl py-2.5 text-sm font-medium hover:opacity-90">
                 Reset Sekarang
               </button>
             </div>
@@ -159,7 +159,7 @@ export default function SettingsPage() {
 
             {/* PREFERENSI */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-              <SectionHeader icon={Sliders} title="Preferensi" subtitle="Atur preferensi penggunaan aplikasi" iconBg="bg-purple-50 dark:bg-purple-950" iconColor="text-purple-600" />
+              <SectionHeader icon={Sliders} title="Preferensi" subtitle="Atur preferensi penggunaan aplikasi" iconBg="bg-terong-soft" iconColor="text-terong" />
               <div className="flex flex-col gap-5">
 
                 {/* Tema */}
@@ -175,7 +175,7 @@ export default function SettingsPage() {
                       <button key={key} onClick={() => setTheme(key)}
                         className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition-colors flex-1 justify-center
                           ${theme === key
-                            ? 'bg-blue-600 text-white border-blue-600'
+                            ? 'bg-terong text-white border-terong'
                             : 'border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800'}`}>
                         <Icon size={14} /> {label}
                       </button>
@@ -183,7 +183,7 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Mata Uang */}
+                {/* Nilai Default Produk */}
                 <div className={`border-t border-gray-100 dark:border-gray-800 pt-3 flex flex-col gap-0 transition-opacity ${!useDefaults ? 'opacity-50' : ''}`}>
                   <div className="flex items-center justify-between pb-3">
                     <div>
@@ -221,7 +221,7 @@ export default function SettingsPage() {
 
             {/* NOTIFIKASI */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-              <SectionHeader icon={Bell} title="Notifikasi" subtitle="Atur notifikasi aplikasi" iconBg="bg-amber-50 dark:bg-amber-950" iconColor="text-amber-500" />
+              <SectionHeader icon={Bell} title="Notifikasi" subtitle="Atur notifikasi aplikasi" iconBg="bg-amber-soft" iconColor="text-amber-c" />
               <div className="flex flex-col gap-3">
                 {[
                   { key: 'notifLowStock', label: 'Stok Menipis', desc: 'Tampilkan peringatan ketika stok mencapai batas minimum' },
@@ -242,7 +242,7 @@ export default function SettingsPage() {
 
             {/* BANTUAN */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-              <SectionHeader icon={BookOpen} title="Bantuan" subtitle="Butuh bantuan menggunakan aplikasi?" iconBg="bg-blue-50 dark:bg-blue-950" iconColor="text-blue-600" />
+              <SectionHeader icon={BookOpen} title="Bantuan" subtitle="Butuh bantuan menggunakan aplikasi?" iconBg="bg-terong-soft" iconColor="text-terong" />
               <Link href="/bantuan" className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <div>
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-100">Pusat Bantuan</p>
@@ -260,7 +260,7 @@ export default function SettingsPage() {
                   <p className="font-semibold text-gray-800 dark:text-gray-100">SIMBA</p>
                   <p className="text-xs text-gray-400 dark:text-gray-500">Sistem Monitoring Barang</p>
                 </div>
-                <span className="bg-blue-50 dark:bg-blue-950 text-blue-600 text-xs font-semibold px-2.5 py-1 rounded-lg">v1.0.0</span>
+                <span className="bg-terong-soft text-terong text-xs font-semibold px-2.5 py-1 rounded-lg">v1.0.0</span>
               </div>
               <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">Dibuat dengan</p>
               <div className="flex items-center gap-4 flex-wrap">

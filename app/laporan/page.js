@@ -81,11 +81,11 @@ export default function LaporanPage() {
     const { data: productData } = await supabase.from('products').select('*')
     setProducts(productData || [])
 
-    let inQuery = supabase.from('stock_in').select('*, products(name, unit, barcode, image_url, category, price)').order('created_at', { ascending: false })
-    let outQuery = supabase.from('stock_out').select('*, products(name, unit, barcode, image_url, category)').order('created_at', { ascending: false })
+    let inQuery = supabase.from('stock_movements').select('*, products(name, unit, barcode, image_url, category, price)').eq('type', 'in').order('created_at', { ascending: false })
+    let outQuery = supabase.from('stock_movements').select('*, products(name, unit, barcode, image_url, category)').eq('type', 'out').order('created_at', { ascending: false })
 
-    if (from) { inQuery = inQuery.gte('date', from); outQuery = outQuery.gte('date', from) }
-    if (to) { inQuery = inQuery.lte('date', to); outQuery = outQuery.lte('date', to) }
+    if (from) { inQuery = inQuery.gte('movement_date', from); outQuery = outQuery.gte('movement_date', from) }
+    if (to) { inQuery = inQuery.lte('movement_date', to); outQuery = outQuery.lte('movement_date', to) }
 
     const [{ data: inData }, { data: outData }] = await Promise.all([inQuery, outQuery])
     setStockIn(inData || [])
@@ -102,9 +102,9 @@ export default function LaporanPage() {
   const totalProducts = products.length
   const totalStockValue = products.reduce((s, p) => s + (p.stock * p.price), 0)
   const totalInQty = stockIn.reduce((s, i) => s + i.quantity, 0)
-  const totalInValue = stockIn.reduce((s, i) => s + (i.quantity * (i.buy_price || 0)), 0)
+  const totalInValue = stockIn.reduce((s, i) => s + (i.quantity * (i.unit_price || 0)), 0)
   const totalOutQty = stockOut.reduce((s, o) => s + o.quantity, 0)
-  const totalOutValue = stockOut.reduce((s, o) => s + (o.quantity * o.price_at_time), 0)
+  const totalOutValue = stockOut.reduce((s, o) => s + (o.quantity * o.unit_price), 0)
   const estimasiKeuntungan = totalOutValue - totalInValue
 
   const chartData = (() => {
@@ -113,8 +113,8 @@ export default function LaporanPage() {
       const d = new Date(); d.setMonth(d.getMonth() - i)
       const key = d.toISOString().slice(0, 7)
       const label = d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' })
-      const masuk = stockIn.filter(h => h.date?.startsWith(key)).reduce((s, h) => s + h.quantity, 0)
-      const keluar = stockOut.filter(h => h.date?.startsWith(key)).reduce((s, h) => s + h.quantity, 0)
+      const masuk = stockIn.filter(h => h.movement_date?.startsWith(key)).reduce((s, h) => s + h.quantity, 0)
+      const keluar = stockOut.filter(h => h.movement_date?.startsWith(key)).reduce((s, h) => s + h.quantity, 0)
       months.push({ label, masuk, keluar })
     }
     return months
@@ -126,7 +126,7 @@ export default function LaporanPage() {
       const key = o.product_id
       if (!map[key]) map[key] = { name: o.products?.name, image: o.products?.image_url, barcode: o.products?.barcode, qty: 0, value: 0 }
       map[key].qty += o.quantity
-      map[key].value += o.quantity * o.price_at_time
+      map[key].value += o.quantity * o.unit_price
     })
     return Object.values(map).sort((a, b) => b.qty - a.qty).slice(0, 5)
   })()
@@ -135,10 +135,10 @@ export default function LaporanPage() {
   const reasonSummary = (() => {
     const map = {}
     stockOut.forEach(o => {
-      const r = o.reason || 'Lainnya'
+      const r = o.note || 'Lainnya'
       if (!map[r]) map[r] = { qty: 0, value: 0 }
       map[r].qty += o.quantity
-      map[r].value += o.quantity * o.price_at_time
+      map[r].value += o.quantity * o.unit_price
     })
     return Object.entries(map).map(([reason, data]) => ({
       reason, ...data,
@@ -159,8 +159,8 @@ export default function LaporanPage() {
   })()
 
   const combined = [
-    ...stockIn.map(i => ({ ...i, type: 'masuk', productName: i.products?.name, productImage: i.products?.image_url, productBarcode: i.products?.barcode, unit: i.products?.unit, price: i.buy_price || 0, keterangan: i.note || i.supplier || '-' })),
-    ...stockOut.map(o => ({ ...o, type: 'keluar', productName: o.products?.name, productImage: o.products?.image_url, productBarcode: o.products?.barcode, unit: o.products?.unit, price: o.price_at_time, keterangan: o.reason || o.note || '-' }))
+    ...stockIn.map(i => ({ ...i, type: 'masuk', productName: i.products?.name, productImage: i.products?.image_url, productBarcode: i.products?.barcode, unit: i.products?.unit, price: i.unit_price || 0, keterangan: i.note || i.supplier || '-' })),
+    ...stockOut.map(o => ({ ...o, type: 'keluar', productName: o.products?.name, productImage: o.products?.image_url, productBarcode: o.products?.barcode, unit: o.products?.unit, price: o.unit_price, keterangan: o.note || '-' }))
   ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
 
   const txFiltered = txFilter === 'all' ? combined : combined.filter(t => t.type === txFilter)
@@ -223,11 +223,11 @@ export default function LaporanPage() {
                   <button key={key} onClick={() => { handlePreset(key); setPresetOpen(false) }}
                     className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors
                       ${preset === key
-                        ? 'bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 font-medium'
+                        ? 'bg-terong-soft text-terong-deep font-medium'
                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                     <span>{icon}</span>
                     {label}
-                    {preset === key && <Check size={13} className="ml-auto text-blue-500" />}
+                    {preset === key && <Check size={13} className="ml-auto text-terong" />}
                   </button>
                 ))}
               </div>
@@ -255,7 +255,7 @@ export default function LaporanPage() {
             <button
               onClick={handleExportPDF}
               disabled={exporting}
-              className="flex items-center gap-2 bg-blue-600 text-white text-sm px-4 py-2 rounded-xl hover:bg-blue-700 font-medium disabled:opacity-60 shadow-sm active:scale-95 transition-all"
+              className="flex items-center gap-2 bg-terong text-white text-sm px-4 py-2 rounded-xl hover:opacity-90 font-medium disabled:opacity-60 shadow-sm active:scale-95 transition-all"
             >
               <FileDown size={15} /> {exporting ? 'Exporting...' : 'Export PDF'}
             </button>
@@ -266,13 +266,13 @@ export default function LaporanPage() {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            <div className="bg-blue-50 dark:bg-blue-950/40 rounded-2xl p-4">
-              <div className="bg-blue-100 dark:bg-blue-900/60 w-9 h-9 rounded-xl flex items-center justify-center mb-3">
-                <Package size={16} className="text-blue-600 dark:text-blue-400" />
+            <div className="bg-terong-soft rounded-2xl p-4">
+              <div className="bg-white dark:bg-gray-900 w-9 h-9 rounded-xl flex items-center justify-center mb-3">
+                <Package size={16} className="text-terong" />
               </div>
-              <p className="text-xs text-blue-500 dark:text-blue-400 mb-1">Total Produk Aktif</p>
-              <p className="text-xl font-bold text-blue-700 dark:text-blue-300 leading-tight">{totalProducts}</p>
-              <p className="text-xs text-blue-400 dark:text-blue-500 mt-0.5">produk</p>
+              <p className="text-xs text-terong-deep/70 mb-1">Total Produk Aktif</p>
+              <p className="text-xl font-bold text-terong-deep leading-tight">{totalProducts}</p>
+              <p className="text-xs text-terong-deep/60 mt-0.5">produk</p>
             </div>
 
             <div className="bg-purple-50 dark:bg-purple-950/40 rounded-2xl p-4">
@@ -321,27 +321,27 @@ export default function LaporanPage() {
                 <span className="text-xs text-gray-400">6 bulan terakhir</span>
               </div>
               <div className="flex items-center gap-4 mb-4">
-                <span className="flex items-center gap-1.5 text-xs text-gray-400"><span className="w-3 h-1.5 rounded-full bg-blue-700 inline-block" /> Masuk</span>
-                <span className="flex items-center gap-1.5 text-xs text-gray-400"><span className="w-3 h-1.5 rounded-full bg-blue-300 inline-block" /> Keluar</span>
+                <span className="flex items-center gap-1.5 text-xs text-gray-400"><span className="w-3 h-1.5 rounded-full bg-daun inline-block" /> Masuk</span>
+                <span className="flex items-center gap-1.5 text-xs text-gray-400"><span className="w-3 h-1.5 rounded-full bg-merah-c inline-block" /> Keluar</span>
               </div>
               <ResponsiveContainer width="100%" height={220}>
                 <AreaChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
                   <defs>
                     <linearGradient id="gMasuk" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#1d4ed8" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0.02} />
+                      <stop offset="0%" stopColor="#059669" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="#059669" stopOpacity={0.02} />
                     </linearGradient>
                     <linearGradient id="gKeluar" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#93c5fd" stopOpacity={0.5} />
-                      <stop offset="100%" stopColor="#93c5fd" stopOpacity={0.02} />
+                      <stop offset="0%" stopColor="#DC2626" stopOpacity={0.5} />
+                      <stop offset="100%" stopColor="#DC2626" stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
                   <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 11, fill: '#9ca3af' }} axisLine={false} tickLine={false} />
                   <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.08)', fontSize: '12px' }} />
-                  <Area type="monotone" dataKey="masuk" stroke="#1d4ed8" strokeWidth={3} fill="url(#gMasuk)" dot={false} name="Masuk (pcs)" />
-                  <Area type="monotone" dataKey="keluar" stroke="#93c5fd" strokeWidth={3} fill="url(#gKeluar)" dot={false} name="Keluar (pcs)" />
+                  <Area type="monotone" dataKey="masuk" stroke="#059669" strokeWidth={3} fill="url(#gMasuk)" dot={false} name="Masuk (pcs)" />
+                  <Area type="monotone" dataKey="keluar" stroke="#DC2626" strokeWidth={3} fill="url(#gKeluar)" dot={false} name="Keluar (pcs)" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -361,7 +361,7 @@ export default function LaporanPage() {
                       <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{p.name}</p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <div className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full h-1.5">
-                          <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${totalOutQtyAll ? (p.qty / totalOutQtyAll * 100) : 0}%` }} />
+                          <div className="bg-terong h-1.5 rounded-full" style={{ width: `${totalOutQtyAll ? (p.qty / totalOutQtyAll * 100) : 0}%` }} />
                         </div>
                         <span className="text-xs text-gray-400 shrink-0">{totalOutQtyAll ? (p.qty / totalOutQtyAll * 100).toFixed(1) : 0}%</span>
                       </div>
@@ -434,8 +434,8 @@ export default function LaporanPage() {
                     {topLoss && <p className="text-xs text-gray-400">{formatRp(topLoss.value)}</p>}
                   </div>
                 </div>
-                <div className="flex items-start gap-3 p-3 bg-blue-50 dark:bg-blue-950/40 rounded-xl">
-                  <Package size={18} className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                <div className="flex items-start gap-3 p-3 bg-terong-soft rounded-xl">
+                  <Package size={18} className="text-terong shrink-0 mt-0.5" />
                   <div>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Kategori terlaris</p>
                     <p className="font-semibold text-gray-800 dark:text-gray-100">{topCategory?.[0] || '-'}</p>
@@ -569,7 +569,7 @@ export default function LaporanPage() {
                     n === '...'
                       ? <span key={`dots-${i}`} className="px-2 text-gray-400 text-sm">...</span>
                       : <button key={n} onClick={() => setTxPage(n)}
-                          className={`w-8 h-8 rounded-lg text-sm ${txPage === n ? 'bg-blue-600 text-white font-medium' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
+                          className={`w-8 h-8 rounded-lg text-sm ${txPage === n ? 'bg-terong text-white font-medium' : 'hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-300'}`}>
                           {n}
                         </button>
                   )}
@@ -592,20 +592,20 @@ export default function LaporanPage() {
             <AreaChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: -20 }}>
               <defs>
                 <linearGradient id="pdf-gMasuk" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#1d4ed8" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="#1d4ed8" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor="#059669" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#059669" stopOpacity={0.02} />
                 </linearGradient>
                 <linearGradient id="pdf-gKeluar" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#93c5fd" stopOpacity={0.5} />
-                  <stop offset="100%" stopColor="#93c5fd" stopOpacity={0.02} />
+                  <stop offset="0%" stopColor="#DC2626" stopOpacity={0.5} />
+                  <stop offset="100%" stopColor="#DC2626" stopOpacity={0.02} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
               <XAxis dataKey="label" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip />
-              <Area type="monotone" dataKey="masuk" stroke="#1d4ed8" strokeWidth={3} fill="url(#pdf-gMasuk)" dot={false} name="Masuk (pcs)" />
-              <Area type="monotone" dataKey="keluar" stroke="#93c5fd" strokeWidth={3} fill="url(#pdf-gKeluar)" dot={false} name="Keluar (pcs)" />
+              <Area type="monotone" dataKey="masuk" stroke="#059669" strokeWidth={3} fill="url(#pdf-gMasuk)" dot={false} name="Masuk (pcs)" />
+              <Area type="monotone" dataKey="keluar" stroke="#DC2626" strokeWidth={3} fill="url(#pdf-gKeluar)" dot={false} name="Keluar (pcs)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>

@@ -114,7 +114,7 @@ export default function NotificationPanel({ mode = 'mobile', sidebarCollapsed = 
               <button key={val} onClick={() => setFilter(val)}
                 className={`text-xs px-3 py-1.5 rounded-lg font-medium transition-colors ${
                   filter === val
-                    ? 'bg-blue-600 text-white'
+                    ? 'bg-terong text-white'
                     : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
                 }`}>
                 {label}
@@ -152,7 +152,7 @@ export default function NotificationPanel({ mode = 'mobile', sidebarCollapsed = 
                   <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{timeAgo(n.timestamp)}</p>
                 </div>
                 {!n.read && n.type !== 'low_stock' && (
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1 shrink-0" />
+                  <div className="w-2 h-2 rounded-full bg-terong mt-1 shrink-0" />
                 )}
               </button>
             ))}
@@ -162,7 +162,7 @@ export default function NotificationPanel({ mode = 'mobile', sidebarCollapsed = 
           {notifs.length > 0 && (
             <div className="flex items-center gap-2 px-4 py-3 border-t border-gray-100 dark:border-gray-800">
               <button onClick={async () => { await markAllRead(); refresh() }}
-                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-terong dark:hover:text-terong transition-colors">
                 <CheckCheck size={13} /> Tandai semua terbaca
               </button>
               <span className="text-gray-300 dark:text-gray-700">·</span>
