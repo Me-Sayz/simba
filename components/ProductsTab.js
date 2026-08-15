@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import dynamic from 'next/dynamic'
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
 import { addNotification } from '@/lib/notifications'
+import { inputCls, FieldError } from '@/lib/formHelpers'
 import { Search, ScanBarcode, Pencil, Trash2, Plus, Package, ShieldCheck, AlertTriangle, XCircle, X, ChevronDown, Check } from 'lucide-react'
 
 const ITEMS_PER_PAGE = 10
@@ -30,9 +31,11 @@ function getFormDefaults() {
 const REQUIRED_FIELDS = {
   name: 'Nama Produk',
   category: 'Kategori',
+  unit: 'Satuan',
   price: 'Harga Jual',
   buy_price: 'Harga Beli / Modal',
   stock: 'Stok Awal',
+  min_stock: 'Minimum Stok',
   barcode: 'Barcode / SKU',
 }
 
@@ -66,11 +69,6 @@ function DeleteModal({ product, onConfirm, onCancel }) {
   )
 }
 
-function FieldError({ msg }) {
-  if (!msg) return null
-  return <p className="text-xs text-rose-500 mt-1">{msg}</p>
-}
-
 function Drawer({ show, onClose, title, children }) {
   if (!show) return null
   return (
@@ -81,7 +79,7 @@ function Drawer({ show, onClose, title, children }) {
           <h2 className="font-semibold text-gray-800 dark:text-gray-100">{title}</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"><X size={20} /></button>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-5">{children}</div>
+        <div className="flex-1 overflow-hidden">{children}</div>
       </div>
     </div>
   )
@@ -105,11 +103,6 @@ function CategoryBadge({ category }) {
     ? <span className={`${cls} text-xs px-2.5 py-1 rounded-full font-medium`}>{category}</span>
     : <span className="text-gray-300 text-xs">-</span>
 }
-
-const inputCls = (hasError) =>
-  `border rounded-xl p-2.5 text-sm w-full bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-terong transition-colors ${
-    hasError ? 'border-rose-400 dark:border-rose-500' : 'border-gray-200 dark:border-gray-700'
-  }`
 
 function CustomSelect({ value, onChange, options, placeholder }) {
   const [open, setOpen] = useState(false)
@@ -142,6 +135,49 @@ function CustomSelect({ value, onChange, options, placeholder }) {
                 : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             {label}
             {value === val && <Check size={13} className="ml-auto text-terong" />}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function CategoryAutocomplete({ id, value, onChange, options, placeholder, hasError }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const filtered = options.filter(o => o.toLowerCase().includes((value || '').toLowerCase()))
+  const showSuggestions = open && filtered.length > 0
+
+  return (
+    <div className="relative" ref={ref}>
+      <input
+        id={id}
+        placeholder={placeholder}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onFocus={() => setOpen(true)}
+        autoComplete="off"
+        className={inputCls(hasError)}
+      />
+      <div className={`absolute left-0 top-[calc(100%+6px)] w-full max-h-48 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 transition-all duration-200 origin-top
+        ${showSuggestions ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}`}>
+        {filtered.map(c => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => { onChange(c); setOpen(false) }}
+            className="flex items-center w-full px-4 py-2.5 text-sm text-left text-gray-600 dark:text-gray-300 hover:bg-terong-soft hover:text-terong-deep dark:hover:bg-gray-700 transition-colors truncate"
+          >
+            {c}
           </button>
         ))}
       </div>
@@ -442,7 +478,8 @@ export default function ProductsTab() {
 
       {/* Drawer form */}
       <Drawer show={showForm} onClose={handleCancel} title={editId ? 'Edit Produk' : 'Tambah Produk'}>
-        <form onSubmit={handleSubmit} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault() }} noValidate className="flex flex-col gap-4">
+        <form onSubmit={handleSubmit} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault() }} noValidate autoComplete="off" className="flex flex-col h-full">
+          <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
 
           <div>
             <label className="text-xs text-gray-500 mb-1 block">
@@ -454,6 +491,7 @@ export default function ProductsTab() {
               value={form.name}
               onChange={e => setField('name', e.target.value)}
               className={inputCls(fieldErrors.name)}
+              autoComplete="off"
             />
             <FieldError msg={fieldErrors.name} />
           </div>
@@ -463,23 +501,29 @@ export default function ProductsTab() {
               <label className="text-xs text-gray-500 mb-1 block">
                 Kategori <span className="text-rose-500">*</span>
               </label>
-              <input
+              <CategoryAutocomplete
                 id="field-category"
                 placeholder="Minuman, Makanan..."
                 value={form.category}
-                onChange={e => setField('category', e.target.value)}
-                className={inputCls(fieldErrors.category)}
+                onChange={val => setField('category', val)}
+                options={categories}
+                hasError={fieldErrors.category}
               />
               <FieldError msg={fieldErrors.category} />
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Satuan <span className="text-gray-400 font-normal">(opsional)</span></label>
+              <label className="text-xs text-gray-500 mb-1 block">
+                Satuan <span className="text-rose-500">*</span>
+              </label>
               <input
+                id="field-unit"
                 placeholder="pcs, kg, dll"
                 value={form.unit}
                 onChange={e => setField('unit', e.target.value)}
-                className={inputCls(false)}
+                className={inputCls(fieldErrors.unit)}
+                autoComplete="off"
               />
+              <FieldError msg={fieldErrors.unit} />
             </div>
           </div>
 
@@ -496,6 +540,7 @@ export default function ProductsTab() {
                 value={form.price}
                 onChange={e => setField('price', e.target.value)}
                 className={inputCls(fieldErrors.price)}
+                autoComplete="off"
               />
               <FieldError msg={fieldErrors.price} />
             </div>
@@ -512,6 +557,7 @@ export default function ProductsTab() {
                   value={form.buy_price}
                   onChange={e => setField('buy_price', e.target.value)}
                   className={inputCls(fieldErrors.buy_price)}
+                  autoComplete="off"
                 />
                 <FieldError msg={fieldErrors.buy_price} />
               </div>
@@ -525,6 +571,7 @@ export default function ProductsTab() {
               value={form.supplier}
               onChange={e => setField('supplier', e.target.value)}
               className={inputCls(false)}
+              autoComplete="off"
             />
           </div>
 
@@ -541,19 +588,25 @@ export default function ProductsTab() {
                 value={form.stock}
                 onChange={e => setField('stock', e.target.value)}
                 className={inputCls(fieldErrors.stock)}
+                autoComplete="off"
               />
               <FieldError msg={fieldErrors.stock} />
             </div>
             <div>
-              <label className="text-xs text-gray-500 mb-1 block">Minimum Stok <span className="text-gray-400 font-normal">(opsional)</span></label>
+              <label className="text-xs text-gray-500 mb-1 block">
+                Minimum Stok <span className="text-rose-500">*</span>
+              </label>
               <input
+                id="field-min_stock"
                 type="number"
                 min="0"
                 placeholder="0"
                 value={form.min_stock}
                 onChange={e => setField('min_stock', e.target.value)}
-                className={inputCls(false)}
+                className={inputCls(fieldErrors.min_stock)}
+                autoComplete="off"
               />
+              <FieldError msg={fieldErrors.min_stock} />
             </div>
           </div>
 
@@ -568,13 +621,14 @@ export default function ProductsTab() {
                 value={form.barcode}
                 onChange={e => setField('barcode', e.target.value)}
                 className={inputCls(fieldErrors.barcode) + ' flex-1'}
+                autoComplete="off"
               />
               <button
                 type="button"
                 onClick={() => { setScanContext('form'); setShowScanner(true) }}
-                className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700"
+                className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300"
               >
-                📷
+                <ScanBarcode size={17} />
               </button>
             </div>
             <FieldError msg={fieldErrors.barcode} />
@@ -594,7 +648,9 @@ export default function ProductsTab() {
             <input id="foto-input" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
           </div>
 
-          <div className="flex gap-2 pt-2">
+          </div>
+
+          <div className="flex gap-2 px-6 py-4 border-t border-gray-100 dark:border-gray-800 shrink-0">
             <button type="submit" disabled={loading} className="flex-1 bg-terong text-white rounded-xl p-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-60">
               {loading ? 'Menyimpan...' : editId ? 'Update Produk' : 'Simpan Produk'}
             </button>
@@ -839,7 +895,7 @@ export default function ProductsTab() {
 
         <button
           onClick={() => { setEditId(null); setForm(getFormDefaults()); setShowForm(true) }}
-          className="md:hidden fixed bottom-6 right-6 w-14 h-14 bg-terong text-white rounded-full shadow-lg flex items-center justify-center hover:opacity-90 z-40"
+          className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-terong text-white rounded-full shadow-lg flex items-center justify-center hover:opacity-90 z-40"
         >
           <Plus size={24} />
         </button>

@@ -21,9 +21,7 @@ export default function KasirNav({ profile }) {
       {/* ===== Desktop Sidebar ===== */}
       <aside className="hidden md:flex flex-col fixed top-0 left-0 h-screen w-60 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 px-4 py-6 z-30">
         <div className="flex items-center gap-2.5 px-2 pb-7">
-          <div className="w-9 h-9 rounded-[11px] bg-gradient-to-br from-terong to-terong-deep flex items-center justify-center text-white font-bold text-sm shrink-0">
-            S
-          </div>
+          <img src="/logo.png" alt="SIMBA" className="w-9 h-9 object-contain shrink-0" />
           <div className="min-w-0">
             <p className="font-bold text-[15px] text-gray-900 dark:text-white leading-tight truncate">SIMBA</p>
             <p className="text-[11px] text-gray-400 truncate">Mode Kasir</p>

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ShoppingCart, ChevronRight, Settings, HelpCircle, LogOut, Pencil } from 'lucide-react'
+import { ShoppingCart, ChevronRight, Settings, HelpCircle, LogOut, Pencil, BarChart3 } from 'lucide-react'
 
 export default function AkunPage() {
   const [profile, setProfile] = useState(null)
@@ -66,6 +66,13 @@ export default function AkunPage() {
 
       {/* Menu */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[18px] overflow-hidden mb-4">
+        <Link href="/laporan" className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
+          <span className="w-9 h-9 rounded-[11px] bg-terong-soft flex items-center justify-center shrink-0">
+            <BarChart3 size={17} className="text-terong" />
+          </span>
+          <span className="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-100">Laporan</span>
+          <ChevronRight size={16} className="text-gray-400" />
+        </Link>
         <Link href="/settings" className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
           <span className="w-9 h-9 rounded-[11px] bg-terong-soft flex items-center justify-center shrink-0">
             <Settings size={17} className="text-terong" />

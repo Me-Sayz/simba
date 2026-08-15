@@ -1,10 +1,17 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { addNotification } from '@/lib/notifications'
+import { inputCls, FieldError } from '@/lib/formHelpers'
 import { Plus, Search, X, Trash2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 
 const REASONS = ['Terjual', 'Rusak', 'Kadaluarsa', 'Retur', 'Hilang', 'Lainnya']
+
+const REQUIRED_FIELDS = {
+  product_id: 'Produk',
+  quantity: 'Jumlah',
+  movement_date: 'Tanggal',
+}
 
 const EMPTY_FORM = {
   product_id: '', type: 'in', quantity: '', buy_price: '',
@@ -17,6 +24,69 @@ function fmtDate(str) {
   return new Date(str).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
+function ProductSearchSelect({ id, value, onChange, products, placeholder, hasError }) {
+  const [query, setQuery] = useState(() => {
+    const selected = products.find(p => p.id === value)
+    return selected ? `${selected.name} (stok: ${selected.stock})` : ''
+  })
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    function handleClick(e) {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const filtered = query.trim()
+    ? products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
+    : products
+
+  function handleSelect(p) {
+    onChange(p.id)
+    setQuery(`${p.name} (stok: ${p.stock})`)
+    setOpen(false)
+  }
+
+  function handleInputChange(e) {
+    setQuery(e.target.value)
+    setOpen(true)
+    if (value) onChange('')
+  }
+
+  return (
+    <div className="relative" ref={ref}>
+      <input
+        id={id}
+        placeholder={placeholder}
+        value={query}
+        onChange={handleInputChange}
+        onFocus={() => setOpen(true)}
+        autoComplete="off"
+        className={inputCls(hasError)}
+      />
+      <div className={`absolute left-0 top-[calc(100%+6px)] w-full max-h-52 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 transition-all duration-200 origin-top
+        ${open ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}`}>
+        {filtered.length === 0 ? (
+          <div className="px-4 py-3 text-sm text-gray-400">Produk tidak ditemukan</div>
+        ) : filtered.map(p => (
+          <button
+            key={p.id}
+            type="button"
+            onClick={() => handleSelect(p)}
+            className="flex items-center justify-between gap-2 w-full px-4 py-2.5 text-sm text-left text-gray-600 dark:text-gray-300 hover:bg-terong-soft hover:text-terong-deep dark:hover:bg-gray-700 transition-colors"
+          >
+            <span className="truncate">{p.name}</span>
+            <span className="text-xs text-gray-400 shrink-0">stok: {p.stock}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function StockMovementsTab() {
   const [products, setProducts] = useState([])
   const [history, setHistory] = useState([])
@@ -26,6 +96,7 @@ export default function StockMovementsTab() {
   const [showModal, setShowModal] = useState(false)
   const [editId, setEditId] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [fieldErrors, setFieldErrors] = useState({})
   const [loading, setLoading] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [toast, setToast] = useState(null)
@@ -51,6 +122,7 @@ export default function StockMovementsTab() {
   function openAddModal() {
     setEditId(null)
     setForm({ ...EMPTY_FORM, movement_date: new Date().toISOString().split('T')[0] })
+    setFieldErrors({})
     setShowModal(true)
   }
 
@@ -69,13 +141,30 @@ export default function StockMovementsTab() {
       note: rest.join(' — '),
       supplier: row.supplier || '',
     })
+    setFieldErrors({})
     setShowModal(true)
+  }
+
+  function validateForm() {
+    const errors = {}
+    for (const [key, label] of Object.entries(REQUIRED_FIELDS)) {
+      if (!form[key] || String(form[key]).trim() === '') errors[key] = `${label} wajib diisi`
+    }
+    return errors
+  }
+
+  function setField(key, value) {
+    setForm(f => ({ ...f, [key]: value }))
+    if (fieldErrors[key]) setFieldErrors(e => ({ ...e, [key]: undefined }))
   }
 
   async function handleSubmit(e) {
     e.preventDefault()
-    if (!form.product_id || !form.quantity) {
-      setToast({ type: 'error', text: 'Lengkapi produk & jumlah dulu' })
+    const errors = validateForm()
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      const firstErrKey = Object.keys(errors)[0]
+      document.getElementById(`field-${firstErrKey}`)?.focus()
       return
     }
     setLoading(true)
@@ -209,54 +298,61 @@ export default function StockMovementsTab() {
       {/* MODAL tambah/edit */}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-[90] flex items-end md:items-center justify-center" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-gray-900 w-full md:max-w-md rounded-t-[24px] md:rounded-[24px] p-5 max-h-[88vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
+          <div className="bg-white dark:bg-gray-900 w-full md:max-w-md rounded-t-[24px] md:rounded-[24px] max-h-[88vh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 pb-3 shrink-0">
               <h3 className="font-bold text-[15px]">{editId ? 'Edit Pergerakan Stok' : 'Catat Pergerakan Stok'}</h3>
               <button onClick={() => setShowModal(false)} className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
                 <X size={15} />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
+              <div className="flex-1 overflow-y-auto px-5 pb-1 flex flex-col gap-3.5">
               <div className="flex bg-gray-100 dark:bg-gray-800 rounded-xl p-1">
                 <button
                   type="button"
                   onClick={() => setForm(f => ({ ...f, type: 'in' }))}
-                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors ${form.type === 'in' ? 'bg-daun text-white' : 'text-gray-500'}`}
+                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 ${form.type === 'in' ? 'bg-daun text-white' : 'text-gray-500'}`}
                 >
-                  📥 Barang Masuk
+                  <ArrowDownCircle size={15} /> Barang Masuk
                 </button>
                 <button
                   type="button"
                   onClick={() => setForm(f => ({ ...f, type: 'out' }))}
-                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors ${form.type === 'out' ? 'bg-merah-c text-white' : 'text-gray-500'}`}
+                  className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 ${form.type === 'out' ? 'bg-merah-c text-white' : 'text-gray-500'}`}
                 >
-                  📤 Barang Keluar
+                  <ArrowUpCircle size={15} /> Barang Keluar
                 </button>
               </div>
 
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Pilih Produk</label>
-                <select
+                <label className="text-xs text-gray-500 mb-1 block">
+                  Pilih Produk <span className="text-rose-500">*</span>
+                </label>
+                <ProductSearchSelect
+                  id="field-product_id"
                   value={form.product_id}
-                  onChange={e => setForm(f => ({ ...f, product_id: e.target.value }))}
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm"
-                  required
-                >
-                  <option value="">— Pilih produk —</option>
-                  {products.map(p => <option key={p.id} value={p.id}>{p.name} (stok: {p.stock})</option>)}
-                </select>
+                  onChange={val => setField('product_id', val)}
+                  products={products}
+                  placeholder="Cari nama produk..."
+                  hasError={fieldErrors.product_id}
+                />
+                <FieldError msg={fieldErrors.product_id} />
               </div>
 
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Jumlah</label>
+                <label className="text-xs text-gray-500 mb-1 block">
+                  Jumlah <span className="text-rose-500">*</span>
+                </label>
                 <input
+                  id="field-quantity"
                   type="number" min="1"
                   value={form.quantity}
-                  onChange={e => setForm(f => ({ ...f, quantity: e.target.value }))}
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm"
-                  required
+                  onChange={e => setField('quantity', e.target.value)}
+                  className={inputCls(fieldErrors.quantity)}
+                  autoComplete="off"
                 />
+                <FieldError msg={fieldErrors.quantity} />
               </div>
 
               {form.type === 'out' && (
@@ -265,7 +361,7 @@ export default function StockMovementsTab() {
                   <select
                     value={form.reason}
                     onChange={e => setForm(f => ({ ...f, reason: e.target.value }))}
-                    className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm"
+                    className={inputCls(false)}
                   >
                     {REASONS.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
@@ -274,7 +370,8 @@ export default function StockMovementsTab() {
                       value={form.reason_note}
                       onChange={e => setForm(f => ({ ...f, reason_note: e.target.value }))}
                       placeholder="Jelaskan alasannya..."
-                      className="w-full mt-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm"
+                      className={inputCls(false) + ' mt-2'}
+                      autoComplete="off"
                     />
                   )}
                 </div>
@@ -288,7 +385,8 @@ export default function StockMovementsTab() {
                       type="number" min="0"
                       value={form.buy_price}
                       onChange={e => setForm(f => ({ ...f, buy_price: e.target.value }))}
-                      className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm"
+                      className={inputCls(false)}
+                      autoComplete="off"
                     />
                   </div>
                   <div>
@@ -296,21 +394,25 @@ export default function StockMovementsTab() {
                     <input
                       value={form.supplier}
                       onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))}
-                      className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm"
+                      className={inputCls(false)}
+                      autoComplete="off"
                     />
                   </div>
                 </>
               )}
 
               <div>
-                <label className="text-xs text-gray-500 mb-1 block">Tanggal</label>
+                <label className="text-xs text-gray-500 mb-1 block">
+                  Tanggal <span className="text-rose-500">*</span>
+                </label>
                 <input
+                  id="field-movement_date"
                   type="date"
                   value={form.movement_date}
-                  onChange={e => setForm(f => ({ ...f, movement_date: e.target.value }))}
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm"
-                  required
+                  onChange={e => setField('movement_date', e.target.value)}
+                  className={inputCls(fieldErrors.movement_date)}
                 />
+                <FieldError msg={fieldErrors.movement_date} />
               </div>
 
               <div>
@@ -319,17 +421,22 @@ export default function StockMovementsTab() {
                   value={form.note}
                   onChange={e => setForm(f => ({ ...f, note: e.target.value }))}
                   placeholder="Misal: dari supplier Pak Budi"
-                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-2.5 text-sm"
+                  className={inputCls(false)}
+                  autoComplete="off"
                 />
               </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className={`w-full py-3 rounded-xl text-white font-bold text-sm mt-1 disabled:opacity-60 ${form.type === 'in' ? 'bg-daun' : 'bg-merah-c'}`}
-              >
-                {loading ? 'Menyimpan...' : editId ? 'Update' : form.type === 'in' ? 'Simpan Barang Masuk' : 'Simpan Barang Keluar'}
-              </button>
+              </div>
+
+              <div className="p-5 pt-3 border-t border-gray-100 dark:border-gray-800 shrink-0">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`w-full py-3 rounded-xl text-white font-bold text-sm disabled:opacity-60 ${form.type === 'in' ? 'bg-daun' : 'bg-merah-c'}`}
+                >
+                  {loading ? 'Menyimpan...' : editId ? 'Update' : form.type === 'in' ? 'Simpan Barang Masuk' : 'Simpan Barang Keluar'}
+                </button>
+              </div>
             </form>
           </div>
         </div>

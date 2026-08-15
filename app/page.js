@@ -196,9 +196,9 @@ export default function Dashboard() {
 
             {/* Chart 7 hari */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-4">
                 <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Penjualan 7 Hari Terakhir</h2>
-                <Link href="/laporan" className="text-xs font-semibold text-terong hover:underline">Lihat Laporan Lengkap →</Link>
+                <Link href="/laporan" className="text-xs font-semibold text-terong hover:underline self-start sm:self-auto">Lihat Laporan Lengkap →</Link>
               </div>
               <div className="h-[140px] md:h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
