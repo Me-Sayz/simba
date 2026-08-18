@@ -152,7 +152,7 @@ export default function Dashboard() {
             <button
               key={p.key}
               onClick={() => setPeriod(p.key)}
-              className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${period === p.key ? 'bg-white text-terong-deep shadow-sm' : 'text-terong-deep/60'}`}
+              className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${period === p.key ? 'bg-white text-terong-deep shadow-sm' : 'text-terong-deep/60 dark:text-terong-light/60'}`}
             >
               {p.label}
             </button>

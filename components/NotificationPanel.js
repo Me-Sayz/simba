@@ -162,7 +162,7 @@ export default function NotificationPanel({ mode = 'mobile', sidebarCollapsed = 
           {notifs.length > 0 && (
             <div className="flex items-center gap-2 px-4 py-3 border-t border-gray-100 dark:border-gray-800">
               <button onClick={async () => { await markAllRead(); refresh() }}
-                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-terong dark:hover:text-terong transition-colors">
+                className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400 hover:text-terong dark:hover:text-terong-light transition-colors">
                 <CheckCheck size={13} /> Tandai semua terbaca
               </button>
               <span className="text-gray-300 dark:text-gray-700">·</span>

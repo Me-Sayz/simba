@@ -5,39 +5,10 @@ import dynamic from 'next/dynamic'
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
 import { addNotification } from '@/lib/notifications'
 import { inputCls, FieldError } from '@/lib/formHelpers'
+import { deleteImageFromStorage } from '@/lib/productImages'
 import { Search, ScanBarcode, Pencil, Trash2, Plus, Package, ShieldCheck, AlertTriangle, XCircle, X, ChevronDown, Check } from 'lucide-react'
 
 const ITEMS_PER_PAGE = 10
-
-const EMPTY_FORM = {
-  name: '', category: '', unit: '', price: '', buy_price: '',
-  stock: '', min_stock: '', barcode: '', supplier: ''
-}
-
-function getFormDefaults() {
-  try {
-    const prefs = JSON.parse(localStorage.getItem('stok-prefs') || '{}')
-    if (!prefs.useDefaults) return EMPTY_FORM
-    return {
-      ...EMPTY_FORM,
-      unit: prefs.defaultUnit || '',
-      min_stock: prefs.defaultMinStock !== undefined ? String(prefs.defaultMinStock) : '',
-    }
-  } catch {
-    return EMPTY_FORM
-  }
-}
-
-const REQUIRED_FIELDS = {
-  name: 'Nama Produk',
-  category: 'Kategori',
-  unit: 'Satuan',
-  price: 'Harga Jual',
-  buy_price: 'Harga Beli / Modal',
-  stock: 'Stok Awal',
-  min_stock: 'Minimum Stok',
-  barcode: 'Barcode / SKU',
-}
 
 function Toast({ msg, onClose }) {
   useEffect(() => { const t = setTimeout(onClose, 3000); return () => clearTimeout(t) }, [onClose])
@@ -131,7 +102,7 @@ function CustomSelect({ value, onChange, options, placeholder }) {
             onClick={() => { onChange(val); setOpen(false) }}
             className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors whitespace-nowrap
               ${value === val
-                ? 'bg-terong-soft text-terong-deep font-medium'
+                ? 'bg-terong-soft text-terong-deep dark:text-terong-light font-medium'
                 : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             {label}
             {value === val && <Check size={13} className="ml-auto text-terong" />}
@@ -175,7 +146,7 @@ function CategoryAutocomplete({ id, value, onChange, options, placeholder, hasEr
             key={c}
             type="button"
             onClick={() => { onChange(c); setOpen(false) }}
-            className="flex items-center w-full px-4 py-2.5 text-sm text-left text-gray-600 dark:text-gray-300 hover:bg-terong-soft hover:text-terong-deep dark:hover:bg-gray-700 transition-colors truncate"
+            className="flex items-center w-full px-4 py-2.5 text-sm text-left text-gray-600 dark:text-gray-300 hover:bg-terong-soft hover:text-terong-deep dark:hover:bg-gray-700 dark:hover:text-terong-light transition-colors truncate"
           >
             {c}
           </button>
@@ -185,90 +156,62 @@ function CategoryAutocomplete({ id, value, onChange, options, placeholder, hasEr
   )
 }
 
-export default function ProductsTab() {
-  const [products, setProducts] = useState([])
-  const [filtered, setFiltered] = useState([])
-  const [form, setForm] = useState(EMPTY_FORM)
-  const [fieldErrors, setFieldErrors] = useState({})
-  const [editId, setEditId] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [fetching, setFetching] = useState(true)
-  const [showScanner, setShowScanner] = useState(false)
-  const [scanContext, setScanContext] = useState('form')
-  const [showForm, setShowForm] = useState(false)
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
-  const [deleteTarget, setDeleteTarget] = useState(null)
-  const [toast, setToast] = useState(null)
-  const [search, setSearch] = useState('')
-  const [filterStatus, setFilterStatus] = useState('all')
-  const [filterCategory, setFilterCategory] = useState('all')
-  const [sortBy, setSortBy] = useState('terbaru')
-  const [page, setPage] = useState(1)
+const EMPTY_FORM = {
+  name: '', category: '', unit: '', price: '', buy_price: '',
+  stock: '', min_stock: '', barcode: '', supplier: ''
+}
 
-  useEffect(() => { fetchProducts() }, [])
-
-  useEffect(() => {
-    let result = [...products]
-    if (search) result = result.filter(p =>
-      p.name?.toLowerCase().includes(search.toLowerCase()) || p.barcode?.includes(search)
-    )
-    if (filterCategory !== 'all') result = result.filter(p => p.category?.toLowerCase() === filterCategory.toLowerCase())
-    if (filterStatus === 'aman') result = result.filter(p => p.stock > p.min_stock)
-    if (filterStatus === 'rendah') result = result.filter(p => p.stock > 0 && p.stock <= p.min_stock)
-    if (filterStatus === 'habis') result = result.filter(p => p.stock === 0)
-    if (sortBy === 'terbaru') result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    if (sortBy === 'stok-asc') result.sort((a, b) => a.stock - b.stock)
-    if (sortBy === 'stok-desc') result.sort((a, b) => b.stock - a.stock)
-    if (sortBy === 'nama') result.sort((a, b) => a.name.localeCompare(b.name))
-    setFiltered(result)
-    setPage(1)
-  }, [products, search, filterStatus, filterCategory, sortBy])
-
-  async function fetchProducts() {
-    setFetching(true)
-    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false })
-    setProducts(data || [])
-    const low = (data || []).filter(p => p.stock <= p.min_stock)
-    low.forEach(p => {
-      addNotification({
-        type: 'low_stock',
-        message: `Stok "${p.name}" menipis (${p.stock} ${p.unit || ''} tersisa)`,
-        link: '/stock',
-      })
-    })
-    setFetching(false)
-  }
-
-  function getStoragePath(publicUrl) {
-    try {
-      const url = new URL(publicUrl)
-      const marker = '/object/public/product-images/'
-      const idx = url.pathname.indexOf(marker)
-      if (idx === -1) return null
-      return decodeURIComponent(url.pathname.slice(idx + marker.length))
-    } catch {
-      return null
+function getFormDefaults() {
+  try {
+    const prefs = JSON.parse(localStorage.getItem('stok-prefs') || '{}')
+    if (!prefs.useDefaults) return EMPTY_FORM
+    return {
+      ...EMPTY_FORM,
+      unit: prefs.defaultUnit || '',
+      min_stock: prefs.defaultMinStock !== undefined ? String(prefs.defaultMinStock) : '',
     }
+  } catch {
+    return EMPTY_FORM
   }
+}
 
-  async function deleteImageFromStorage(publicUrl) {
-    if (!publicUrl) return
-    const path = getStoragePath(publicUrl)
-    if (!path) return
-    const { error } = await supabase.storage.from('product-images').remove([path])
-    if (error) console.error('remove error:', error)
-  }
+const REQUIRED_FIELDS = {
+  name: 'Nama Produk',
+  category: 'Kategori',
+  unit: 'Satuan',
+  price: 'Harga Jual',
+  buy_price: 'Harga Beli / Modal',
+  stock: 'Stok Awal',
+  min_stock: 'Minimum Stok',
+  barcode: 'Barcode / SKU',
+}
 
-  async function uploadImage(oldImageUrl = null) {
-    if (!imageFile) return null
-    const { data: { user } } = await supabase.auth.getUser()
-    const fileName = `${user.id}/${Date.now()}-${imageFile.name}`
-    const { error } = await supabase.storage.from('product-images').upload(fileName, imageFile)
-    if (error) return null
-    if (oldImageUrl) deleteImageFromStorage(oldImageUrl)
-    const { data } = supabase.storage.from('product-images').getPublicUrl(fileName)
-    return data.publicUrl
+// Komponen form Tambah/Edit Produk berdiri sendiri, dipisah dari ProductsTab
+// biar ngetik di sini gak ikut ngerender ulang tabel/list produk di belakangnya
+// (yang isinya foto tiap produk, cukup berat kalau ikut re-render tiap keystroke).
+function ProductFormDrawer({ editProduct, categories, onClose, onSaved, setToast }) {
+  const editId = editProduct?.id || null
+
+  const [form, setForm] = useState(() => editProduct ? {
+    name: editProduct.name,
+    category: editProduct.category || '',
+    unit: editProduct.unit || '',
+    price: editProduct.price,
+    buy_price: editProduct.buy_price || '',
+    stock: editProduct.stock,
+    min_stock: editProduct.min_stock,
+    barcode: editProduct.barcode || '',
+    supplier: editProduct.supplier || '',
+  } : getFormDefaults())
+  const [fieldErrors, setFieldErrors] = useState({})
+  const [loading, setLoading] = useState(false)
+  const [showScanner, setShowScanner] = useState(false)
+  const [imageFile, setImageFile] = useState(null)
+  const [imagePreview, setImagePreview] = useState(editProduct?.image_url || null)
+
+  function setField(key, value) {
+    setForm(f => ({ ...f, [key]: value }))
+    if (fieldErrors[key]) setFieldErrors(e => ({ ...e, [key]: undefined }))
   }
 
   function validateForm() {
@@ -282,9 +225,22 @@ export default function ProductsTab() {
     return errors
   }
 
-  function setField(key, value) {
-    setForm(f => ({ ...f, [key]: value }))
-    if (fieldErrors[key]) setFieldErrors(e => ({ ...e, [key]: undefined }))
+  async function uploadImage(oldImageUrl = null) {
+    if (!imageFile) return null
+    const { data: { user } } = await supabase.auth.getUser()
+    const fileName = `${user.id}/${Date.now()}-${imageFile.name}`
+    const { error } = await supabase.storage.from('product-images').upload(fileName, imageFile)
+    if (error) return null
+    if (oldImageUrl) deleteImageFromStorage(oldImageUrl)
+    const { data } = supabase.storage.from('product-images').getPublicUrl(fileName)
+    return data.publicUrl
+  }
+
+  function handleImageChange(e) {
+    const file = e.target.files[0]
+    if (!file) return
+    setImageFile(file)
+    setImagePreview(URL.createObjectURL(file))
   }
 
   async function handleSubmit(e) {
@@ -330,7 +286,7 @@ export default function ProductsTab() {
     }
 
     const { data: { user } } = await supabase.auth.getUser()
-    const oldImageUrl = editId ? (products.find(p => p.id === editId)?.image_url || null) : null
+    const oldImageUrl = editId ? (editProduct?.image_url || null) : null
     const image_url = await uploadImage(oldImageUrl)
 
     const payload = {
@@ -349,7 +305,6 @@ export default function ProductsTab() {
       const { error } = await supabase.from('products').update(payload).eq('id', editId).eq('user_id', user.id)
       if (error) setToast({ type: 'error', text: 'Gagal update produk' })
       else setToast({ type: 'success', text: 'Produk berhasil diupdate' })
-      setEditId(null)
     } else {
       // stock awal dimulai dari 0 — nanti dinaikkan otomatis lewat trigger
       // stock_movements, biar gak dobel-hitung sama insert stok awal di bawah
@@ -382,102 +337,14 @@ export default function ProductsTab() {
       })
     }
 
-    setForm(getFormDefaults())
-    setFieldErrors({})
-    setImageFile(null)
-    setImagePreview(null)
     setLoading(false)
-    setShowForm(false)
-    fetchProducts()
+    onSaved()
+    onClose()
   }
-
-  async function handleDelete() {
-    if (deleteTarget.image_url) await deleteImageFromStorage(deleteTarget.image_url)
-    const { error } = await supabase.from('products').delete().eq('id', deleteTarget.id)
-    if (error) setToast({ type: 'error', text: 'Gagal hapus produk' })
-    else setToast({ type: 'success', text: 'Produk berhasil dihapus' })
-    setDeleteTarget(null)
-    fetchProducts()
-  }
-
-  function handleEdit(product) {
-    setEditId(product.id)
-    setForm({
-      name: product.name,
-      category: product.category || '',
-      unit: product.unit || '',
-      price: product.price,
-      buy_price: product.buy_price || '',
-      stock: product.stock,
-      min_stock: product.min_stock,
-      barcode: product.barcode || '',
-      supplier: product.supplier || '',
-    })
-    setImagePreview(product.image_url || null)
-    setFieldErrors({})
-    setShowForm(true)
-  }
-
-  function handleCancel() {
-    setEditId(null)
-    setForm(getFormDefaults())
-    setFieldErrors({})
-    setImageFile(null)
-    setImagePreview(null)
-    setShowForm(false)
-  }
-
-  function handleImageChange(e) {
-    const file = e.target.files[0]
-    if (!file) return
-    setImageFile(file)
-    setImagePreview(URL.createObjectURL(file))
-  }
-
-  const categories = [...new Set(products.map(p => p.category).filter(Boolean))]
-  const totalPage = Math.ceil(filtered.length / ITEMS_PER_PAGE)
-  const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
-
-  const stats = {
-    total: products.length,
-    aman: products.filter(p => p.stock > p.min_stock).length,
-    rendah: products.filter(p => p.stock > 0 && p.stock <= p.min_stock).length,
-    habis: products.filter(p => p.stock === 0).length,
-  }
-
-  function getPaginationPages() {
-    const pages = []
-    for (let i = 1; i <= totalPage; i++) {
-      if (i === 1 || i === totalPage || Math.abs(i - page) <= 1) pages.push(i)
-      else if (pages[pages.length - 1] !== '...') pages.push('...')
-    }
-    return pages
-  }
-
-  const categoryOptions = [
-    { value: 'all', label: 'Semua Kategori' },
-    ...categories.map(c => ({ value: c, label: c }))
-  ]
-  const statusOptions = [
-    { value: 'all', label: 'Semua Status' },
-    { value: 'aman', label: 'Aman' },
-    { value: 'rendah', label: 'Rendah' },
-    { value: 'habis', label: 'Habis' },
-  ]
-  const sortOptions = [
-    { value: 'terbaru', label: 'Terbaru' },
-    { value: 'nama', label: 'Nama A-Z' },
-    { value: 'stok-asc', label: 'Stok Terendah' },
-    { value: 'stok-desc', label: 'Stok Tertinggi' },
-  ]
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-950">
-      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
-      {deleteTarget && <DeleteModal product={deleteTarget} onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} />}
-
-      {/* Drawer form */}
-      <Drawer show={showForm} onClose={handleCancel} title={editId ? 'Edit Produk' : 'Tambah Produk'}>
+    <>
+      <Drawer show={true} onClose={onClose} title={editId ? 'Edit Produk' : 'Tambah Produk'}>
         <form onSubmit={handleSubmit} onKeyDown={e => { if (e.key === 'Enter') e.preventDefault() }} noValidate autoComplete="off" className="flex flex-col h-full">
           <div className="flex-1 overflow-y-auto px-6 py-5 flex flex-col gap-4">
 
@@ -625,7 +492,7 @@ export default function ProductsTab() {
               />
               <button
                 type="button"
-                onClick={() => { setScanContext('form'); setShowScanner(true) }}
+                onClick={() => setShowScanner(true)}
                 className="bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 text-sm hover:bg-gray-200 dark:hover:bg-gray-700 flex items-center justify-center text-gray-600 dark:text-gray-300"
               >
                 <ScanBarcode size={17} />
@@ -654,29 +521,161 @@ export default function ProductsTab() {
             <button type="submit" disabled={loading} className="flex-1 bg-terong text-white rounded-xl p-2.5 text-sm font-semibold hover:opacity-90 disabled:opacity-60">
               {loading ? 'Menyimpan...' : editId ? 'Update Produk' : 'Simpan Produk'}
             </button>
-            <button type="button" onClick={handleCancel} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
+            <button type="button" onClick={onClose} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl p-2.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800">
               Batal
             </button>
           </div>
         </form>
       </Drawer>
 
-      {/* Scanner — di luar Drawer, render paling akhir supaya selalu di atas */}
+      {/* Scanner khusus field barcode form ini — dipisah dari scanner search di toolbar */}
       {showScanner && (
         <BarcodeScanner
           onDetected={code => {
-            if (scanContext === 'search') {
-              setSearch(code)
-              setToast({ type: 'success', text: `Barcode: ${code}` })
-            } else {
-              setField('barcode', code)
-              setToast({ type: 'success', text: `Barcode terdeteksi: ${code}` })
-            }
+            setField('barcode', code)
+            setToast({ type: 'success', text: `Barcode terdeteksi: ${code}` })
             setShowScanner(false)
           }}
           onClose={() => setShowScanner(false)}
         />
       )}
+    </>
+  )
+}
+
+export default function ProductsTab() {
+  const [products, setProducts] = useState([])
+  const [filtered, setFiltered] = useState([])
+  const [editProduct, setEditProduct] = useState(null)
+  const [fetching, setFetching] = useState(true)
+  const [showScanner, setShowScanner] = useState(false)
+  const [showForm, setShowForm] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null)
+  const [toast, setToast] = useState(null)
+  const [search, setSearch] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterCategory, setFilterCategory] = useState('all')
+  const [sortBy, setSortBy] = useState('terbaru')
+  const [page, setPage] = useState(1)
+
+  useEffect(() => { fetchProducts() }, [])
+
+  useEffect(() => {
+    let result = [...products]
+    if (search) result = result.filter(p =>
+      p.name?.toLowerCase().includes(search.toLowerCase()) || p.barcode?.includes(search)
+    )
+    if (filterCategory !== 'all') result = result.filter(p => p.category?.toLowerCase() === filterCategory.toLowerCase())
+    if (filterStatus === 'aman') result = result.filter(p => p.stock > p.min_stock)
+    if (filterStatus === 'rendah') result = result.filter(p => p.stock > 0 && p.stock <= p.min_stock)
+    if (filterStatus === 'habis') result = result.filter(p => p.stock === 0)
+    if (sortBy === 'terbaru') result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    if (sortBy === 'stok-asc') result.sort((a, b) => a.stock - b.stock)
+    if (sortBy === 'stok-desc') result.sort((a, b) => b.stock - a.stock)
+    if (sortBy === 'nama') result.sort((a, b) => a.name.localeCompare(b.name))
+    setFiltered(result)
+    setPage(1)
+  }, [products, search, filterStatus, filterCategory, sortBy])
+
+  async function fetchProducts() {
+    setFetching(true)
+    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+    setProducts(data || [])
+    const low = (data || []).filter(p => p.stock <= p.min_stock)
+    low.forEach(p => {
+      addNotification({
+        type: 'low_stock',
+        message: `Stok "${p.name}" menipis (${p.stock} ${p.unit || ''} tersisa)`,
+        link: '/stock',
+      })
+    })
+    setFetching(false)
+  }
+
+  async function handleDelete() {
+    if (deleteTarget.image_url) await deleteImageFromStorage(deleteTarget.image_url)
+    const { error } = await supabase.from('products').delete().eq('id', deleteTarget.id)
+    if (error) setToast({ type: 'error', text: 'Gagal hapus produk' })
+    else setToast({ type: 'success', text: 'Produk berhasil dihapus' })
+    setDeleteTarget(null)
+    fetchProducts()
+  }
+
+  function handleEdit(product) {
+    setEditProduct(product)
+    setShowForm(true)
+  }
+
+  function handleCancel() {
+    setEditProduct(null)
+    setShowForm(false)
+  }
+
+  const categories = [...new Set(products.map(p => p.category).filter(Boolean))]
+  const totalPage = Math.ceil(filtered.length / ITEMS_PER_PAGE)
+  const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
+
+  const stats = {
+    total: products.length,
+    aman: products.filter(p => p.stock > p.min_stock).length,
+    rendah: products.filter(p => p.stock > 0 && p.stock <= p.min_stock).length,
+    habis: products.filter(p => p.stock === 0).length,
+  }
+
+  function getPaginationPages() {
+    const pages = []
+    for (let i = 1; i <= totalPage; i++) {
+      if (i === 1 || i === totalPage || Math.abs(i - page) <= 1) pages.push(i)
+      else if (pages[pages.length - 1] !== '...') pages.push('...')
+    }
+    return pages
+  }
+
+  const categoryOptions = [
+    { value: 'all', label: 'Semua Kategori' },
+    ...categories.map(c => ({ value: c, label: c }))
+  ]
+  const statusOptions = [
+    { value: 'all', label: 'Semua Status' },
+    { value: 'aman', label: 'Aman' },
+    { value: 'rendah', label: 'Rendah' },
+    { value: 'habis', label: 'Habis' },
+  ]
+  const sortOptions = [
+    { value: 'terbaru', label: 'Terbaru' },
+    { value: 'nama', label: 'Nama A-Z' },
+    { value: 'stok-asc', label: 'Stok Terendah' },
+    { value: 'stok-desc', label: 'Stok Tertinggi' },
+  ]
+
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950">
+      {toast && <Toast msg={toast} onClose={() => setToast(null)} />}
+      {deleteTarget && <DeleteModal product={deleteTarget} onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} />}
+
+      {/* Form Tambah/Edit Produk — komponen terpisah biar ngetik gak ikut ngerender ulang tabel */}
+      {showForm && (
+        <ProductFormDrawer
+          editProduct={editProduct}
+          categories={categories}
+          onClose={handleCancel}
+          onSaved={fetchProducts}
+          setToast={setToast}
+        />
+      )}
+
+      {/* Scanner buat search di toolbar */}
+      {showScanner && (
+        <BarcodeScanner
+          onDetected={code => {
+            setSearch(code)
+            setToast({ type: 'success', text: `Barcode: ${code}` })
+            setShowScanner(false)
+          }}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+
 
       <div className="px-4 md:px-6 py-6 max-w-8xl mx-auto">
 
@@ -686,7 +685,7 @@ export default function ProductsTab() {
             <p className="text-sm text-gray-500 mt-0.5">Total Produk: {products.length.toLocaleString('id-ID')}</p>
           </div>
           <button
-            onClick={() => { setEditId(null); setForm(getFormDefaults()); setShowForm(true) }}
+            onClick={() => { setEditProduct(null); setShowForm(true) }}
             className="flex items-center gap-2 bg-terong text-white text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-colors font-medium"
           >
             <Plus size={16} /> Tambah Produk
@@ -698,8 +697,8 @@ export default function ProductsTab() {
           <div className="bg-terong-soft rounded-2xl p-4 flex items-center gap-4">
             <div className="bg-white dark:bg-gray-900 p-3 rounded-xl"><Package size={20} className="text-terong" /></div>
             <div>
-              <p className="text-xs text-terong-deep/70 mb-0.5">Total Produk:</p>
-              <p className="text-2xl font-bold text-terong-deep dark:text-terong">{stats.total}</p>
+              <p className="text-xs text-terong-deep/70 dark:text-terong-light/70 mb-0.5">Total Produk:</p>
+              <p className="text-2xl font-bold text-terong-deep dark:text-terong-light">{stats.total}</p>
             </div>
           </div>
           <div className="bg-emerald-50 dark:bg-emerald-950/40 rounded-2xl p-4 flex items-center gap-4">
@@ -742,7 +741,7 @@ export default function ProductsTab() {
               <CustomSelect value={filterStatus} onChange={setFilterStatus} options={statusOptions} placeholder="Semua Status" />
               <CustomSelect value={sortBy} onChange={setSortBy} options={sortOptions} placeholder="Terbaru" />
               <button
-                onClick={() => { setScanContext('search'); setShowScanner(true) }}
+                onClick={() => setShowScanner(true)}
                 className="flex items-center gap-2 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2.5 text-sm hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
               >
                 <ScanBarcode size={15} /> Scan
@@ -894,7 +893,7 @@ export default function ProductsTab() {
         )}
 
         <button
-          onClick={() => { setEditId(null); setForm(getFormDefaults()); setShowForm(true) }}
+          onClick={() => { setEditProduct(null); setShowForm(true) }}
           className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-terong text-white rounded-full shadow-lg flex items-center justify-center hover:opacity-90 z-40"
         >
           <Plus size={24} />

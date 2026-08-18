@@ -61,6 +61,7 @@ select option {
   --terong: #5B21B6;
   --terong-deep: #2E1065;
   --terong-soft: #EDE6FB;
+  --terong-light: #C4B5FD;
   --daun: #059669;
   --daun-soft: #DCFCE7;
   --amber-c: #D97706;
@@ -81,6 +82,7 @@ select option {
   --color-terong: var(--terong);
   --color-terong-deep: var(--terong-deep);
   --color-terong-soft: var(--terong-soft);
+  --color-terong-light: var(--terong-light);
   --color-daun: var(--daun);
   --color-daun-soft: var(--daun-soft);
   --color-amber-c: var(--amber-c);

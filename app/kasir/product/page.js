@@ -80,7 +80,7 @@ export default function KasirProductPage() {
                 <div className="p-2.5">
                   <p className="text-xs font-bold text-gray-800 dark:text-gray-100 truncate">{p.name}</p>
                   <p className="text-[10.5px] text-gray-400">{outOfStock ? 'Stok habis' : `Stok: ${p.stock}`}</p>
-                  <p className="text-[12.5px] font-bold text-terong-deep mt-1">{fmt(p.price)}</p>
+                  <p className="text-[12.5px] font-bold text-terong-deep dark:text-terong-light mt-1">{fmt(p.price)}</p>
                 </div>
                 {inCart > 0 && (
                   <span className="absolute top-2 right-2 min-w-[20px] h-5 px-1.5 rounded-full bg-merah-c text-white text-[10px] font-bold flex items-center justify-center">

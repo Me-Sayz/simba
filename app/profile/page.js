@@ -251,7 +251,7 @@ export default function ProfilePage() {
               <div className="relative">
                 {currentAvatarInModal
                   ? <img src={currentAvatarInModal} className="w-20 h-20 rounded-full object-cover" />
-                  : <div className="w-20 h-20 rounded-full bg-terong-soft flex items-center justify-center text-terong-deep font-bold text-2xl">{initials}</div>
+                  : <div className="w-20 h-20 rounded-full bg-terong-soft flex items-center justify-center text-terong-deep dark:text-terong-light font-bold text-2xl">{initials}</div>
                 }
                 <label className={`absolute -bottom-1 -right-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full p-1.5 shadow-sm ${loading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                   <Camera size={12} className="text-gray-500 dark:text-gray-400" />
@@ -442,7 +442,7 @@ export default function ProfilePage() {
                 <CheckCircle2 size={13} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
               </div>
               {profile.store_name && (
-                <span className="inline-flex items-center gap-1.5 text-xs bg-terong-soft text-terong-deep px-2.5 py-1 rounded-full mt-2 font-medium">
+                <span className="inline-flex items-center gap-1.5 text-xs bg-terong-soft text-terong-deep dark:text-terong-light px-2.5 py-1 rounded-full mt-2 font-medium">
                   <Building2 size={11} /> {profile.store_name}
                 </span>
               )}
@@ -509,7 +509,7 @@ export default function ProfilePage() {
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Info akun</p>
               <div className="flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
                 {[
-                  { icon: Crown, label: 'Role akun', value: <span className="text-xs font-medium bg-terong-soft text-terong-deep px-2.5 py-1 rounded-full">Owner</span> },
+                  { icon: Crown, label: 'Role akun', value: <span className="text-xs font-medium bg-terong-soft text-terong-deep dark:text-terong-light px-2.5 py-1 rounded-full">Owner</span> },
                   { icon: LogIn, label: 'Login terakhir', value: <span className="text-sm text-gray-600 dark:text-gray-300">{lastSign}</span> },
                   { icon: Monitor, label: 'Perangkat', value: <span className="text-sm text-gray-600 dark:text-gray-300">Browser</span> },
                 ].map(({ icon: Icon, label, value }) => (

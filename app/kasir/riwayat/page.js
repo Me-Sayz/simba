@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Receipt, History } from 'lucide-react'
+import { Receipt, History, ChevronRight, Wallet } from 'lucide-react'
 
 function fmt(n) {
   return 'Rp ' + (n || 0).toLocaleString('id-ID')
@@ -41,44 +41,55 @@ export default function KasirRiwayatPage() {
   const totalToday = transactions.reduce((s, t) => s + t.total_amount, 0)
 
   return (
-    <div className="max-w-md mx-auto px-4 py-6">
-      <div className="text-center mb-5">
-        <div className="w-14 h-14 rounded-2xl bg-terong-soft flex items-center justify-center mx-auto mb-3">
-          <History size={24} className="text-terong" />
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+      <div className="flex items-center gap-3 mb-5">
+        <div className="w-11 h-11 rounded-2xl bg-terong-soft flex items-center justify-center shrink-0">
+          <History size={20} className="text-terong" />
         </div>
-        <h1 className="font-bold text-lg text-gray-800 dark:text-gray-100">Riwayat Hari Ini</h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          {transactions.length} transaksi • {fmt(totalToday)}
-        </p>
+        <div>
+          <h1 className="font-bold text-lg text-gray-800 dark:text-gray-100">Riwayat Hari Ini</h1>
+          <p className="text-xs text-gray-400">{transactions.length} transaksi tercatat</p>
+        </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
-        {fetching ? (
-          <div className="py-12 text-center text-sm text-gray-400">Memuat...</div>
-        ) : transactions.length === 0 ? (
-          <div className="py-16 text-center">
-            <Receipt size={40} className="mx-auto mb-3 text-terong-soft" />
-            <p className="text-sm text-gray-400">Belum ada transaksi hari ini.</p>
-          </div>
-        ) : (
-          transactions.map(t => (
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 mb-4 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl bg-terong-soft flex items-center justify-center shrink-0">
+          <Wallet size={22} className="text-terong" />
+        </div>
+        <div>
+          <p className="text-xs text-gray-400">Omzet hari ini</p>
+          <p className="text-2xl font-bold text-daun">{fmt(totalToday)}</p>
+        </div>
+      </div>
+
+      {fetching ? (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl py-12 text-center text-sm text-gray-400">Memuat...</div>
+      ) : transactions.length === 0 ? (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl py-16 text-center">
+          <Receipt size={40} className="mx-auto mb-3 text-terong-soft" />
+          <p className="text-sm text-gray-400">Belum ada transaksi hari ini.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-3">
+          {transactions.map(t => (
             <button
               key={t.id}
               onClick={() => openDetail(t)}
-              className="w-full flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 last:border-b-0 text-left hover:bg-gray-50 dark:hover:bg-gray-800/50"
+              className="w-full flex items-center gap-3.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl px-5 py-4 text-left hover:border-terong/40 dark:hover:border-terong/40 transition-colors"
             >
-              <div className="w-9 h-9 rounded-[11px] bg-daun-soft flex items-center justify-center shrink-0">
-                <Receipt size={16} className="text-daun" />
+              <div className="w-11 h-11 rounded-[13px] bg-daun-soft flex items-center justify-center shrink-0">
+                <Receipt size={19} className="text-daun" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">#{t.transaction_code}</p>
-                <p className="text-[11px] text-gray-400">{fmtTime(t.created_at)}</p>
+                <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">#{t.transaction_code}</p>
+                <p className="text-xs text-gray-400 mt-0.5">{fmtTime(t.created_at)}</p>
               </div>
-              <span className="text-sm font-bold text-daun shrink-0">{fmt(t.total_amount)}</span>
+              <span className="text-base font-bold text-daun shrink-0">{fmt(t.total_amount)}</span>
+              <ChevronRight size={18} className="text-gray-300 shrink-0" />
             </button>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
 
       {selected && (
         <div className="fixed inset-0 bg-black/40 z-[90] flex items-end md:items-center justify-center" onClick={() => setSelected(null)}>

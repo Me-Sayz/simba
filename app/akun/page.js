@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ShoppingCart, ChevronRight, Settings, HelpCircle, LogOut, Pencil, BarChart3 } from 'lucide-react'
+import { ShoppingCart, ChevronRight, Settings, HelpCircle, LogOut, BarChart3, Building2, User } from 'lucide-react'
 
 export default function AkunPage() {
   const [profile, setProfile] = useState(null)
@@ -30,23 +30,23 @@ export default function AkunPage() {
   const initial = profile?.name?.[0]?.toUpperCase() || 'U'
 
   return (
-    <div className="max-w-xl mx-auto px-4 py-6 md:py-8">
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
       {/* Header profil */}
-      <div className="bg-gradient-to-br from-terong to-terong-deep rounded-[22px] p-6 flex items-center gap-4 text-white mb-5">
+      <div className="flex flex-col items-center text-center pt-2 pb-5">
         {profile?.avatar_url ? (
-          <img src={profile.avatar_url} className="w-[60px] h-[60px] rounded-full object-cover border-2 border-white/40 shrink-0" />
+          <img src={profile.avatar_url} className="w-24 h-24 rounded-full object-cover border-4 border-terong-soft dark:border-gray-800" />
         ) : (
-          <div className="w-[60px] h-[60px] rounded-full bg-white/15 flex items-center justify-center font-bold text-2xl border-2 border-white/40 shrink-0">
+          <div className="w-24 h-24 rounded-full bg-terong-soft dark:bg-gray-800 flex items-center justify-center font-bold text-3xl text-terong border-4 border-terong-soft dark:border-gray-800">
             {initial}
           </div>
         )}
-        <div className="min-w-0 flex-1">
-          <p className="font-bold text-[16.5px] truncate">{profile?.store_name || profile?.name || 'Toko Anda'}</p>
-          <p className="text-xs opacity-80 truncate">{email}</p>
-        </div>
-        <Link href="/profile" className="w-9 h-9 rounded-[10px] bg-white/15 flex items-center justify-center shrink-0">
-          <Pencil size={16} />
-        </Link>
+        <p className="font-bold text-lg text-gray-900 dark:text-gray-100 mt-3">{profile?.name || 'User'}</p>
+        {profile?.store_name && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
+            <Building2 size={11} /> {profile.store_name}
+          </p>
+        )}
+        <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{email}</p>
       </div>
 
       {/* Pindah mode */}
@@ -58,43 +58,65 @@ export default function AkunPage() {
           <ShoppingCart size={21} className="text-terong" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="font-bold text-sm text-terong-deep">Pindah ke Mode Kasir</p>
-          <p className="text-[11.5px] text-terong-deep/75">Mulai transaksi &amp; terima pembayaran</p>
+          <p className="font-bold text-sm text-terong-deep dark:text-terong-light">Pindah ke Mode Kasir</p>
+          <p className="text-[11.5px] text-terong-deep/75 dark:text-terong-light/75">Mulai transaksi &amp; terima pembayaran</p>
         </div>
         <ChevronRight size={18} className="text-terong shrink-0" />
       </Link>
 
       {/* Menu */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[18px] overflow-hidden mb-4">
-        <Link href="/laporan" className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
-          <span className="w-9 h-9 rounded-[11px] bg-terong-soft flex items-center justify-center shrink-0">
-            <BarChart3 size={17} className="text-terong" />
+        <Link href="/profile" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
+            <User size={19} className="text-terong" />
           </span>
-          <span className="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-100">Laporan</span>
-          <ChevronRight size={16} className="text-gray-400" />
+          <span className="flex-1">
+            <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Profil & Akun</span>
+            <span className="block text-xs text-gray-400 mt-0.5">Kelola informasi profil dan akun Anda</span>
+          </span>
+          <ChevronRight size={18} className="text-gray-400 shrink-0" />
         </Link>
-        <Link href="/settings" className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800">
-          <span className="w-9 h-9 rounded-[11px] bg-terong-soft flex items-center justify-center shrink-0">
-            <Settings size={17} className="text-terong" />
+        <Link href="/laporan" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
+            <BarChart3 size={19} className="text-terong" />
           </span>
-          <span className="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-100">Pengaturan</span>
-          <ChevronRight size={16} className="text-gray-400" />
+          <span className="flex-1">
+            <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Laporan</span>
+            <span className="block text-xs text-gray-400 mt-0.5">Lihat laporan dan statistik bisnis</span>
+          </span>
+          <ChevronRight size={18} className="text-gray-400 shrink-0" />
         </Link>
-        <Link href="/bantuan" className="flex items-center gap-3 px-4 py-3.5">
-          <span className="w-9 h-9 rounded-[11px] bg-terong-soft flex items-center justify-center shrink-0">
-            <HelpCircle size={17} className="text-terong" />
+        <Link href="/settings" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+          <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
+            <Settings size={19} className="text-terong" />
           </span>
-          <span className="flex-1 text-sm font-semibold text-gray-800 dark:text-gray-100">Bantuan</span>
-          <ChevronRight size={16} className="text-gray-400" />
+          <span className="flex-1">
+            <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Pengaturan</span>
+            <span className="block text-xs text-gray-400 mt-0.5">Atur preferensi aplikasi dan sistem</span>
+          </span>
+          <ChevronRight size={18} className="text-gray-400 shrink-0" />
+        </Link>
+        <Link href="/bantuan" className="flex items-center gap-3.5 px-5 py-4">
+          <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
+            <HelpCircle size={19} className="text-terong" />
+          </span>
+          <span className="flex-1">
+            <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Bantuan</span>
+            <span className="block text-xs text-gray-400 mt-0.5">FAQ dan pusat bantuan</span>
+          </span>
+          <ChevronRight size={18} className="text-gray-400 shrink-0" />
         </Link>
       </div>
 
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[18px] overflow-hidden">
-        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3.5 text-left">
-          <span className="w-9 h-9 rounded-[11px] bg-merah-soft flex items-center justify-center shrink-0">
-            <LogOut size={17} className="text-merah-c" />
+        <button onClick={handleLogout} className="w-full flex items-center gap-3.5 px-5 py-4 text-left">
+          <span className="w-11 h-11 rounded-[13px] bg-merah-soft flex items-center justify-center shrink-0">
+            <LogOut size={19} className="text-merah-c" />
           </span>
-          <span className="flex-1 text-sm font-semibold text-merah-c">Keluar</span>
+          <span className="flex-1">
+            <span className="block text-sm font-semibold text-merah-c">Keluar</span>
+            <span className="block text-xs text-merah-c/60 mt-0.5">Keluar dari akun ini</span>
+          </span>
         </button>
       </div>
     </div>

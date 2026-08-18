@@ -36,7 +36,7 @@ export default function MonitoringNav({ profile, lowStock = 0 }) {
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors
                   ${active
                     ? 'bg-terong text-white'
-                    : 'text-gray-500 dark:text-gray-400 hover:bg-terong-soft hover:text-terong-deep dark:hover:bg-gray-800'}`}
+                    : 'text-gray-500 dark:text-gray-400 hover:bg-terong-soft hover:text-terong-deep dark:hover:bg-gray-800 dark:hover:text-terong-light'}`}
               >
                 <Icon size={19} className="shrink-0" />
                 <span className="truncate">{label}</span>
@@ -66,7 +66,7 @@ export default function MonitoringNav({ profile, lowStock = 0 }) {
                 <span className="w-[52px] h-[52px] rounded-full bg-gradient-to-br from-terong to-terong-deep flex items-center justify-center shadow-lg shadow-terong/40">
                   <Icon size={22} className="text-white" />
                 </span>
-                <span className="text-[10.5px] font-bold text-terong-deep">{label}</span>
+                <span className="text-[10.5px] font-bold text-terong-deep dark:text-terong-light">{label}</span>
               </Link>
             )
           }

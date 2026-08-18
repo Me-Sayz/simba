@@ -223,7 +223,7 @@ export default function LaporanPage() {
                   <button key={key} onClick={() => { handlePreset(key); setPresetOpen(false) }}
                     className={`flex items-center gap-3 w-full px-4 py-2.5 text-sm transition-colors
                       ${preset === key
-                        ? 'bg-terong-soft text-terong-deep font-medium'
+                        ? 'bg-terong-soft text-terong-deep dark:text-terong-light font-medium'
                         : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
                     <span>{icon}</span>
                     {label}
@@ -270,9 +270,9 @@ export default function LaporanPage() {
               <div className="bg-white dark:bg-gray-900 w-9 h-9 rounded-xl flex items-center justify-center mb-3">
                 <Package size={16} className="text-terong" />
               </div>
-              <p className="text-xs text-terong-deep/70 mb-1">Total Produk Aktif</p>
-              <p className="text-xl font-bold text-terong-deep leading-tight">{totalProducts}</p>
-              <p className="text-xs text-terong-deep/60 mt-0.5">produk</p>
+              <p className="text-xs text-terong-deep/70 dark:text-terong-light/70 mb-1">Total Produk Aktif</p>
+              <p className="text-xl font-bold text-terong-deep dark:text-terong-light leading-tight">{totalProducts}</p>
+              <p className="text-xs text-terong-deep/60 dark:text-terong-light/60 mt-0.5">produk</p>
             </div>
 
             <div className="bg-purple-50 dark:bg-purple-950/40 rounded-2xl p-4">

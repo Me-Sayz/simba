@@ -80,7 +80,7 @@ export default function KasirScanPage() {
       )}
 
       {!showScanner && !pending && !notFoundCode && (
-        <button onClick={() => setShowScanner(true)} className="w-full py-4 rounded-2xl bg-terong-soft text-terong-deep font-bold text-sm flex items-center justify-center gap-2">
+        <button onClick={() => setShowScanner(true)} className="w-full py-4 rounded-2xl bg-terong-soft text-terong-deep dark:text-terong-light font-bold text-sm flex items-center justify-center gap-2">
           <ScanLine size={18} /> Buka Kamera
         </button>
       )}

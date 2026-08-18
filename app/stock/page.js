@@ -14,13 +14,13 @@ export default function StockPage() {
         <div className="flex bg-terong-soft rounded-2xl p-1 max-w-xs mb-1">
           <button
             onClick={() => setTab('produk')}
-            className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'produk' ? 'bg-white text-terong-deep shadow-sm' : 'text-terong-deep/60'}`}
+            className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'produk' ? 'bg-white text-terong-deep shadow-sm' : 'text-terong-deep/60 dark:text-terong-light/60'}`}
           >
             Produk
           </button>
           <button
             onClick={() => setTab('riwayat')}
-            className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'riwayat' ? 'bg-white text-terong-deep shadow-sm' : 'text-terong-deep/60'}`}
+            className={`flex-1 py-2 rounded-xl text-sm font-bold transition-colors ${tab === 'riwayat' ? 'bg-white text-terong-deep shadow-sm' : 'text-terong-deep/60 dark:text-terong-light/60'}`}
           >
             Riwayat Stok
           </button>

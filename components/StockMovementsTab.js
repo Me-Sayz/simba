@@ -27,7 +27,7 @@ function fmtDate(str) {
 function ProductSearchSelect({ id, value, onChange, products, placeholder, hasError }) {
   const [query, setQuery] = useState(() => {
     const selected = products.find(p => p.id === value)
-    return selected ? `${selected.name} (stok: ${selected.stock})` : ''
+    return selected ? selected.name : ''
   })
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -43,10 +43,11 @@ function ProductSearchSelect({ id, value, onChange, products, placeholder, hasEr
   const filtered = query.trim()
     ? products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()))
     : products
+  const selectedProduct = products.find(p => p.id === value)
 
   function handleSelect(p) {
     onChange(p.id)
-    setQuery(`${p.name} (stok: ${p.stock})`)
+    setQuery(p.name)
     setOpen(false)
   }
 
@@ -67,6 +68,9 @@ function ProductSearchSelect({ id, value, onChange, products, placeholder, hasEr
         autoComplete="off"
         className={inputCls(hasError)}
       />
+      {selectedProduct && (
+        <p className="text-xs text-gray-400 mt-1">Stok saat ini: {selectedProduct.stock} {selectedProduct.unit || 'pcs'}</p>
+      )}
       <div className={`absolute left-0 top-[calc(100%+6px)] w-full max-h-52 overflow-y-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl z-50 transition-all duration-200 origin-top
         ${open ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}`}>
         {filtered.length === 0 ? (
@@ -76,7 +80,7 @@ function ProductSearchSelect({ id, value, onChange, products, placeholder, hasEr
             key={p.id}
             type="button"
             onClick={() => handleSelect(p)}
-            className="flex items-center justify-between gap-2 w-full px-4 py-2.5 text-sm text-left text-gray-600 dark:text-gray-300 hover:bg-terong-soft hover:text-terong-deep dark:hover:bg-gray-700 transition-colors"
+            className="flex items-center justify-between gap-2 w-full px-4 py-2.5 text-sm text-left text-gray-600 dark:text-gray-300 hover:bg-terong-soft hover:text-terong-deep dark:hover:bg-gray-700 dark:hover:text-terong-light transition-colors"
           >
             <span className="truncate">{p.name}</span>
             <span className="text-xs text-gray-400 shrink-0">stok: {p.stock}</span>
