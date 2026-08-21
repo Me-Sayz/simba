@@ -24,8 +24,8 @@ function DeleteModal({ product, onConfirm, onCancel }) {
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-sm">
-        <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Trash2 size={20} className="text-rose-500" />
+        <div className="w-12 h-12 bg-rose-100 dark:bg-rose-950 rounded-full flex items-center justify-center mx-auto mb-4">
+          <Trash2 size={20} className="text-rose-500 dark:text-rose-400" />
         </div>
         <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-center mb-1">Hapus Produk?</h3>
         <p className="text-sm text-gray-500 text-center mb-6">
@@ -57,22 +57,39 @@ function Drawer({ show, onClose, title, children }) {
 }
 
 function StatusBadge({ stock, minStock }) {
-  if (stock === 0) return <span className="bg-rose-100 text-rose-700 text-xs px-2.5 py-1 rounded-full font-medium">Habis</span>
-  if (stock <= minStock) return <span className="bg-amber-100 text-amber-700 text-xs px-2.5 py-1 rounded-full font-medium">Rendah</span>
-  return <span className="bg-emerald-100 text-emerald-700 text-xs px-2.5 py-1 rounded-full font-medium">Aman</span>
+  if (stock === 0) return <span className="bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 text-xs px-2.5 py-1 rounded-full font-medium">Habis</span>
+  if (stock <= minStock) return <span className="bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 text-xs px-2.5 py-1 rounded-full font-medium">Rendah</span>
+  return <span className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 text-xs px-2.5 py-1 rounded-full font-medium">Aman</span>
+}
+
+// Palet warna kategori — sengaja skip merah/amber/hijau karena warna itu udah
+// dipakai badge status (Habis/Rendah/Aman), biar gak ketuker maknanya.
+const CATEGORY_COLORS = [
+  'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300',
+  'bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300',
+  'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300',
+  'bg-indigo-100 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300',
+  'bg-pink-100 text-pink-700 dark:bg-pink-950 dark:text-pink-300',
+  'bg-cyan-100 text-cyan-700 dark:bg-cyan-950 dark:text-cyan-300',
+  'bg-teal-100 text-teal-700 dark:bg-teal-950 dark:text-teal-300',
+  'bg-violet-100 text-violet-700 dark:bg-violet-950 dark:text-violet-300',
+]
+
+// Nama kategori yang sama selalu jatuh ke warna yang sama (deterministik),
+// jadi konsisten tiap kali dibuka, bukan random tiap render.
+function categoryColorClass(category) {
+  const str = category.toLowerCase().trim()
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 31 + str.charCodeAt(i)) >>> 0
+  }
+  return CATEGORY_COLORS[hash % CATEGORY_COLORS.length]
 }
 
 function CategoryBadge({ category }) {
-  const map = {
-    'minuman': 'bg-blue-100 text-blue-700',
-    'makanan': 'bg-green-100 text-green-700',
-    'obat': 'bg-purple-100 text-purple-700',
-    'rumah tangga': 'bg-orange-100 text-orange-700',
-  }
-  const cls = map[category?.toLowerCase()] || 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400'
-  return category
-    ? <span className={`${cls} text-xs px-2.5 py-1 rounded-full font-medium`}>{category}</span>
-    : <span className="text-gray-300 text-xs">-</span>
+  if (!category) return <span className="text-gray-300 text-xs">-</span>
+  const cls = categoryColorClass(category)
+  return <span className={`${cls} text-xs px-2.5 py-1 rounded-full font-medium`}>{category}</span>
 }
 
 function CustomSelect({ value, onChange, options, placeholder }) {
@@ -105,7 +122,7 @@ function CustomSelect({ value, onChange, options, placeholder }) {
                 ? 'bg-terong-soft text-terong-deep dark:text-terong-light font-medium'
                 : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}>
             {label}
-            {value === val && <Check size={13} className="ml-auto text-terong" />}
+            {value === val && <Check size={13} className="ml-auto text-terong dark:text-terong-light" />}
           </button>
         ))}
       </div>
@@ -695,7 +712,7 @@ export default function ProductsTab() {
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div className="bg-terong-soft rounded-2xl p-4 flex items-center gap-4">
-            <div className="bg-white dark:bg-gray-900 p-3 rounded-xl"><Package size={20} className="text-terong" /></div>
+            <div className="bg-white dark:bg-gray-900 p-3 rounded-xl"><Package size={20} className="text-terong dark:text-terong-light" /></div>
             <div>
               <p className="text-xs text-terong-deep/70 dark:text-terong-light/70 mb-0.5">Total Produk:</p>
               <p className="text-2xl font-bold text-terong-deep dark:text-terong-light">{stats.total}</p>
@@ -792,7 +809,7 @@ export default function ProductsTab() {
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300">Rp {Number(p.price).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-1">
-                        <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-terong-soft text-gray-400 hover:text-terong transition-colors"><Pencil size={15} /></button>
+                        <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-terong-soft text-gray-400 hover:text-terong dark:hover:text-terong-light transition-colors"><Pencil size={15} /></button>
                         <button onClick={() => setDeleteTarget(p)} className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-gray-400 hover:text-rose-500 transition-colors"><Trash2 size={15} /></button>
                       </div>
                     </td>
@@ -805,7 +822,7 @@ export default function ProductsTab() {
                       <p className="text-gray-400 text-sm">Tidak ada produk ditemukan</p>
                       <button
                         onClick={() => { setSearch(''); setFilterStatus('all'); setFilterCategory('all') }}
-                        className="mt-3 text-terong text-sm hover:underline"
+                        className="mt-3 text-terong dark:text-terong-light text-sm hover:underline"
                       >
                         Reset filter
                       </button>
@@ -849,7 +866,7 @@ export default function ProductsTab() {
               {p.supplier && <p className="text-xs text-gray-400 mb-1">Supplier: {p.supplier}</p>}
               {p.barcode && <p className="text-xs text-gray-400 font-mono mb-3">{p.barcode}</p>}
               <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <button onClick={() => handleEdit(p)} className="flex-1 flex items-center justify-center gap-1.5 text-terong text-sm py-1.5 rounded-lg hover:bg-terong-soft"><Pencil size={14} /> Edit</button>
+                <button onClick={() => handleEdit(p)} className="flex-1 flex items-center justify-center gap-1.5 text-terong dark:text-terong-light text-sm py-1.5 rounded-lg hover:bg-terong-soft"><Pencil size={14} /> Edit</button>
                 <button onClick={() => setDeleteTarget(p)} className="flex-1 flex items-center justify-center gap-1.5 text-rose-400 text-sm py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40"><Trash2 size={14} /> Hapus</button>
               </div>
             </div>

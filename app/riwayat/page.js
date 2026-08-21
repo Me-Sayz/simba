@@ -49,7 +49,7 @@ export default function RiwayatPage() {
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
       <div className="flex items-center gap-3 mb-5">
         <div className="w-11 h-11 rounded-2xl bg-terong-soft flex items-center justify-center shrink-0">
-          <History size={20} className="text-terong" />
+          <History size={20} className="text-terong dark:text-terong-light" />
         </div>
         <div>
           <h1 className="font-bold text-lg text-gray-800 dark:text-gray-100">Riwayat Transaksi</h1>
@@ -59,7 +59,7 @@ export default function RiwayatPage() {
 
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-5 mb-4 flex items-center gap-4">
         <div className="w-12 h-12 rounded-2xl bg-terong-soft flex items-center justify-center shrink-0">
-          <Wallet size={22} className="text-terong" />
+          <Wallet size={22} className="text-terong dark:text-terong-light" />
         </div>
         <div>
           <p className="text-xs text-gray-400">Omzet hari ini</p>
@@ -83,7 +83,7 @@ export default function RiwayatPage() {
               className="w-full flex items-center gap-3.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl px-5 py-4 text-left hover:border-terong/40 dark:hover:border-terong/40 transition-colors"
             >
               <div className="w-11 h-11 rounded-[13px] bg-daun-soft flex items-center justify-center shrink-0">
-                <Receipt size={19} className="text-daun" />
+                <Receipt size={19} className="text-daun dark:text-daun-light" />
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">#{t.transaction_code}</p>

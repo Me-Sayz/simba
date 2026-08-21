@@ -101,7 +101,7 @@ export default function KasirScanPage() {
             <div className="w-11 h-11 rounded-xl bg-daun-soft flex items-center justify-center shrink-0 overflow-hidden">
               {pending.product.image_url
                 ? <img src={pending.product.image_url} className="w-full h-full object-cover" />
-                : <Package size={19} className="text-daun" />}
+                : <Package size={19} className="text-daun dark:text-daun-light" />}
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-bold text-sm text-gray-800 dark:text-gray-100 truncate">{pending.product.name}</p>
@@ -110,11 +110,11 @@ export default function KasirScanPage() {
           </div>
 
           <div className="flex items-center justify-center gap-3 bg-gray-50 dark:bg-gray-800 rounded-xl py-3 mb-4">
-            <button onClick={() => stepQty(-1)} className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 flex items-center justify-center font-bold text-terong shadow-sm">
+            <button onClick={() => stepQty(-1)} className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 flex items-center justify-center font-bold text-terong dark:text-terong-light shadow-sm">
               <Minus size={15} />
             </button>
             <span className="font-bold text-lg w-8 text-center">{pending.qty}</span>
-            <button onClick={() => stepQty(1)} className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 flex items-center justify-center font-bold text-terong shadow-sm">
+            <button onClick={() => stepQty(1)} className="w-8 h-8 rounded-lg bg-white dark:bg-gray-700 flex items-center justify-center font-bold text-terong dark:text-terong-light shadow-sm">
               <Plus size={15} />
             </button>
           </div>

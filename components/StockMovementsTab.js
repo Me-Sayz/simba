@@ -281,7 +281,7 @@ export default function StockMovementsTab() {
           filtered.map(row => (
             <div key={row.id} className="flex items-center gap-3 px-4 py-3.5 border-b border-gray-100 dark:border-gray-800 last:border-b-0">
               <div className={`w-9 h-9 rounded-[11px] flex items-center justify-center shrink-0 ${row.type === 'in' ? 'bg-daun-soft' : 'bg-merah-soft'}`}>
-                {row.type === 'in' ? <ArrowDownCircle size={17} className="text-daun" /> : <ArrowUpCircle size={17} className="text-merah-c" />}
+                {row.type === 'in' ? <ArrowDownCircle size={17} className="text-daun dark:text-daun-light" /> : <ArrowUpCircle size={17} className="text-merah-c dark:text-merah-light" />}
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-[13px] font-semibold text-gray-800 dark:text-gray-100 truncate">{row.products?.name || 'Produk dihapus'}</p>
@@ -290,7 +290,7 @@ export default function StockMovementsTab() {
               <span className={`text-xs font-bold shrink-0 ${row.type === 'in' ? 'text-daun' : 'text-merah-c'}`}>
                 {row.type === 'in' ? '+' : '-'}{row.quantity}
               </span>
-              <button onClick={() => openEditModal(row)} className="text-[11px] text-terong font-semibold shrink-0">Edit</button>
+              <button onClick={() => openEditModal(row)} className="text-[11px] text-terong dark:text-terong-light font-semibold shrink-0">Edit</button>
               <button onClick={() => setDeleteTarget(row)} className="text-gray-300 hover:text-merah-c shrink-0">
                 <Trash2 size={15} />
               </button>

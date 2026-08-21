@@ -166,28 +166,28 @@ export default function Dashboard() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5">
                 <div className="w-9 h-9 rounded-xl bg-daun-soft flex items-center justify-center mb-2.5">
-                  <Wallet size={17} className="text-daun" />
+                  <Wallet size={17} className="text-daun dark:text-daun-light" />
                 </div>
                 <p className="text-xs text-gray-400 font-semibold">Omzet</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{fmtRupiah(omzet)}</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5">
                 <div className="w-9 h-9 rounded-xl bg-terong-soft flex items-center justify-center mb-2.5">
-                  <Receipt size={17} className="text-terong" />
+                  <Receipt size={17} className="text-terong dark:text-terong-light" />
                 </div>
                 <p className="text-xs text-gray-400 font-semibold">Transaksi</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{jumlahTransaksi}</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5">
                 <div className="w-9 h-9 rounded-xl bg-terong-soft flex items-center justify-center mb-2.5">
-                  <Package size={17} className="text-terong" />
+                  <Package size={17} className="text-terong dark:text-terong-light" />
                 </div>
                 <p className="text-xs text-gray-400 font-semibold">Total Produk</p>
                 <p className="text-lg font-bold text-gray-800 dark:text-gray-100">{products.length}</p>
               </div>
               <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5">
                 <div className="w-9 h-9 rounded-xl bg-amber-soft flex items-center justify-center mb-2.5">
-                  <AlertTriangle size={17} className="text-amber-c" />
+                  <AlertTriangle size={17} className="text-amber-c dark:text-amber-light" />
                 </div>
                 <p className="text-xs text-gray-400 font-semibold">Stok Menipis</p>
                 <p className="text-lg font-bold text-amber-c">{lowStockProducts.length} produk</p>
@@ -198,7 +198,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-4">
                 <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Penjualan 7 Hari Terakhir</h2>
-                <Link href="/laporan" className="text-xs font-semibold text-terong hover:underline self-start sm:self-auto">Lihat Laporan Lengkap →</Link>
+                <Link href="/laporan" className="text-xs font-semibold text-terong dark:text-terong-light hover:underline self-start sm:self-auto">Lihat Laporan Lengkap →</Link>
               </div>
               <div className="h-[140px] md:h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
@@ -231,7 +231,7 @@ export default function Dashboard() {
               </Link>
               <Link href="/stock" className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 flex flex-col gap-2.5">
                 <div className="w-9 h-9 rounded-xl bg-terong-soft flex items-center justify-center">
-                  <Plus size={17} className="text-terong" />
+                  <Plus size={17} className="text-terong dark:text-terong-light" />
                 </div>
                 <div>
                   <p className="font-bold text-sm text-gray-800 dark:text-gray-100">Tambah Produk</p>
@@ -247,7 +247,7 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">⚠️ Perlu Restock</h2>
-                <Link href="/stock" className="text-xs font-semibold text-terong hover:underline">Lihat</Link>
+                <Link href="/stock" className="text-xs font-semibold text-terong dark:text-terong-light hover:underline">Lihat</Link>
               </div>
               {lowStockProducts.length === 0 ? (
                 <p className="text-xs text-gray-300 text-center py-4">Semua stok aman 👍</p>
@@ -264,7 +264,7 @@ export default function Dashboard() {
                           <p className="text-xs font-semibold text-gray-700 dark:text-gray-200 truncate">{p.name}</p>
                           <p className="text-[11px] text-gray-400">Sisa {p.stock} {p.unit}</p>
                         </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${critical ? 'bg-merah-soft text-merah-c' : 'bg-amber-soft text-amber-c'}`}>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${critical ? 'bg-merah-soft text-merah-c dark:text-merah-light' : 'bg-amber-soft text-amber-c dark:text-amber-light'}`}>
                           {critical ? 'Kritis' : 'Menipis'}
                         </span>
                       </div>
@@ -290,7 +290,7 @@ export default function Dashboard() {
                         {p.image_url ? <img src={p.image_url} className="w-full h-full object-cover" /> : <Package size={13} className="text-gray-400" />}
                       </div>
                       <p className="flex-1 text-xs text-gray-700 dark:text-gray-200 truncate">{p.name}</p>
-                      <span className="text-[11px] font-bold text-terong shrink-0">{p.qty} terjual</span>
+                      <span className="text-[11px] font-bold text-terong dark:text-terong-light shrink-0">{p.qty} terjual</span>
                     </div>
                   ))}
                 </div>

@@ -11,7 +11,7 @@ const quickHelp = [
   {
     icon: LayoutDashboard,
     iconBg: 'bg-terong-soft',
-    iconColor: 'text-terong',
+    iconColor: 'text-terong dark:text-terong-light',
     title: 'Dashboard',
     desc: 'Melihat ringkasan stok dan aktivitas toko',
     panduan: [
@@ -55,7 +55,7 @@ const quickHelp = [
   {
     icon: ScanLine,
     iconBg: 'bg-terong-soft',
-    iconColor: 'text-terong',
+    iconColor: 'text-terong dark:text-terong-light',
     title: 'Scan Produk',
     desc: 'Cek & update stok cepat pakai kamera',
     panduan: [
@@ -69,7 +69,7 @@ const quickHelp = [
   {
     icon: ShoppingCart,
     iconBg: 'bg-terong-soft',
-    iconColor: 'text-terong',
+    iconColor: 'text-terong dark:text-terong-light',
     title: 'Mode Kasir',
     desc: 'Cara melayani transaksi penjualan',
     panduan: [
@@ -113,7 +113,7 @@ const quickHelp = [
   {
     icon: User,
     iconBg: 'bg-terong-soft',
-    iconColor: 'text-terong',
+    iconColor: 'text-terong dark:text-terong-light',
     title: 'Akun & Profil',
     desc: 'Kelola profil, pindah mode, dan keamanan akun',
     panduan: [
@@ -129,7 +129,7 @@ const quickHelp = [
 
 const steps = [
   { num: 1, icon: Package, iconBg: 'bg-violet-50 dark:bg-violet-950', iconColor: 'text-violet-600 dark:text-violet-400', numBg: 'bg-violet-600', title: 'Tambah Produk', desc: 'Daftarkan produk di menu Stok sebelum mulai jualan.' },
-  { num: 2, icon: ScanLine, iconBg: 'bg-terong-soft', iconColor: 'text-terong', numBg: 'bg-terong', title: 'Buka Kasir', desc: 'Pindah ke Mode Kasir lewat menu Akun untuk mulai transaksi.' },
+  { num: 2, icon: ScanLine, iconBg: 'bg-terong-soft', iconColor: 'text-terong dark:text-terong-light', numBg: 'bg-terong', title: 'Buka Kasir', desc: 'Pindah ke Mode Kasir lewat menu Akun untuk mulai transaksi.' },
   { num: 3, icon: ShoppingCart, iconBg: 'bg-emerald-50 dark:bg-emerald-950', iconColor: 'text-emerald-600 dark:text-emerald-400', numBg: 'bg-emerald-600', title: 'Layani Transaksi', desc: 'Pilih/scan produk, cek keranjang, lalu proses pembayaran.' },
   { num: 4, icon: FileText, iconBg: 'bg-rose-50 dark:bg-rose-950', iconColor: 'text-rose-500 dark:text-rose-400', numBg: 'bg-rose-500', title: 'Pantau Laporan', desc: 'Cek Dashboard & Laporan buat pantau stok dan penjualan.' },
 ]
@@ -177,7 +177,7 @@ export default function BantuanPage() {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-terong-soft p-2.5 rounded-xl">
-                <BookOpen size={20} className="text-terong" />
+                <BookOpen size={20} className="text-terong dark:text-terong-light" />
               </div>
               <div>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Pusat Bantuan</h2>
@@ -197,12 +197,12 @@ export default function BantuanPage() {
           </div>
           <div className="hidden md:flex items-center gap-5 text-xs text-gray-400 dark:text-gray-500">
             <div className="text-center">
-              <p className="text-2xl font-bold text-terong">{quickHelp.length}</p>
+              <p className="text-2xl font-bold text-terong dark:text-terong-light">{quickHelp.length}</p>
               <p>Panduan</p>
             </div>
             <div className="w-px h-10 bg-gray-200 dark:bg-gray-700" />
             <div className="text-center">
-              <p className="text-2xl font-bold text-terong">{faqs.length}</p>
+              <p className="text-2xl font-bold text-terong dark:text-terong-light">{faqs.length}</p>
               <p>FAQ</p>
             </div>
           </div>
@@ -255,12 +255,12 @@ export default function BantuanPage() {
                     onClick={() => setOpenFaq(openFaq === i ? null : i)}
                     className="w-full flex items-start justify-between px-5 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors gap-3"
                   >
-                    <span className={`text-sm leading-snug flex-1 ${openFaq === i ? 'text-terong font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
+                    <span className={`text-sm leading-snug flex-1 ${openFaq === i ? 'text-terong dark:text-terong-light font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
                       {faq.q}
                     </span>
                     <ChevronDown
                       size={14}
-                      className={`shrink-0 text-gray-400 mt-0.5 transition-transform duration-200 ${openFaq === i ? 'rotate-180 text-terong' : ''}`}
+                      className={`shrink-0 text-gray-400 mt-0.5 transition-transform duration-200 ${openFaq === i ? 'rotate-180 text-terong dark:text-terong-light' : ''}`}
                     />
                   </button>
                   {openFaq === i && (
@@ -352,7 +352,7 @@ export default function BantuanPage() {
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-1 h-5 bg-gray-300 dark:bg-gray-600 rounded-full" />
                 <h3 className="font-semibold text-gray-800 dark:text-gray-100">Tentang Aplikasi</h3>
-                <span className="ml-auto bg-terong-soft text-terong text-xs font-semibold px-2.5 py-1 rounded-lg">v1.0.0</span>
+                <span className="ml-auto bg-terong-soft text-terong dark:text-terong-light text-xs font-semibold px-2.5 py-1 rounded-lg">v1.0.0</span>
               </div>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -382,7 +382,7 @@ export default function BantuanPage() {
 
         {/* Footer */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 flex items-start gap-3">
-          <Info size={16} className="text-terong mt-0.5 shrink-0" />
+          <Info size={16} className="text-terong dark:text-terong-light mt-0.5 shrink-0" />
           <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
             Tidak menemukan jawaban yang kamu cari? Hubungi pengembang langsung melalui{' '}
             

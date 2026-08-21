@@ -64,10 +64,13 @@ select option {
   --terong-light: #C4B5FD;
   --daun: #059669;
   --daun-soft: #DCFCE7;
+  --daun-light: #6EE7B7;
   --amber-c: #D97706;
   --amber-soft: #FEF3C7;
+  --amber-light: #FCD34D;
   --merah-c: #DC2626;
   --merah-soft: #FEE2E2;
+  --merah-light: #FCA5A5;
 }
 
 .dark {
@@ -85,10 +88,13 @@ select option {
   --color-terong-light: var(--terong-light);
   --color-daun: var(--daun);
   --color-daun-soft: var(--daun-soft);
+  --color-daun-light: var(--daun-light);
   --color-amber-c: var(--amber-c);
   --color-amber-soft: var(--amber-soft);
+  --color-amber-light: var(--amber-light);
   --color-merah-c: var(--merah-c);
   --color-merah-soft: var(--merah-soft);
+  --color-merah-light: var(--merah-light);
 }
 
 .left-logo img {

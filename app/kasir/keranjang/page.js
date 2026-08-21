@@ -106,7 +106,7 @@ export default function KasirKeranjangPage() {
       <div className="flex items-start justify-between gap-3 mb-5">
         <div className="flex items-center gap-3">
           <div className="w-11 h-11 rounded-2xl bg-terong-soft flex items-center justify-center shrink-0">
-            <ShoppingCart size={20} className="text-terong" />
+            <ShoppingCart size={20} className="text-terong dark:text-terong-light" />
           </div>
           <div>
             <h1 className="font-bold text-lg text-gray-800 dark:text-gray-100 flex items-center gap-2">
@@ -124,7 +124,7 @@ export default function KasirKeranjangPage() {
           <button
             onClick={handleClearAll}
             title="Hapus semua item"
-            className="w-10 h-10 rounded-xl bg-merah-soft text-merah-c flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity"
+            className="w-10 h-10 rounded-xl bg-merah-soft text-merah-c dark:text-merah-light flex items-center justify-center shrink-0 hover:opacity-80 transition-opacity"
           >
             <Trash2 size={18} />
           </button>
@@ -148,15 +148,15 @@ export default function KasirKeranjangPage() {
                   <p className="text-xs text-gray-400">{fmt(product.price)}</p>
                 </div>
                 <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg px-1.5 py-1 shrink-0">
-                  <button onClick={() => handleDecrement(id, qty)} className="w-6 h-6 rounded-md bg-white dark:bg-gray-700 font-bold text-terong">−</button>
+                  <button onClick={() => handleDecrement(id, qty)} className="w-6 h-6 rounded-md bg-white dark:bg-gray-700 font-bold text-terong dark:text-terong-light">−</button>
                   <span className="text-xs font-bold w-4 text-center">{qty}</span>
-                  <button onClick={() => addToCart(id, 1)} disabled={qty >= product.stock} className="w-6 h-6 rounded-md bg-white dark:bg-gray-700 font-bold text-terong disabled:opacity-30">+</button>
+                  <button onClick={() => addToCart(id, 1)} disabled={qty >= product.stock} className="w-6 h-6 rounded-md bg-white dark:bg-gray-700 font-bold text-terong dark:text-terong-light disabled:opacity-30">+</button>
                 </div>
                 <p className="text-sm font-bold w-20 text-right shrink-0">{fmt(product.price * qty)}</p>
                 <button
                   onClick={() => handleDeleteItem(id)}
                   title="Hapus item"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-merah-c hover:bg-merah-soft transition-colors shrink-0"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-300 hover:text-merah-c dark:hover:text-merah-light hover:bg-merah-soft transition-colors shrink-0"
                 >
                   <Trash2 size={15} />
                 </button>
@@ -229,7 +229,7 @@ export default function KasirKeranjangPage() {
             />
 
             {paymentNum > 0 && (
-              <div className={`rounded-xl px-3.5 py-2.5 mb-4 text-sm font-semibold ${change >= 0 ? 'bg-daun-soft text-daun' : 'bg-merah-soft text-merah-c'}`}>
+              <div className={`rounded-xl px-3.5 py-2.5 mb-4 text-sm font-semibold ${change >= 0 ? 'bg-daun-soft text-daun dark:text-daun-light' : 'bg-merah-soft text-merah-c dark:text-merah-light'}`}>
                 {change >= 0 ? `Kembalian: ${fmt(change)}` : `Kurang: ${fmt(Math.abs(change))}`}
               </div>
             )}

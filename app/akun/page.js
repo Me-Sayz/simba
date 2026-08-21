@@ -36,7 +36,7 @@ export default function AkunPage() {
         {profile?.avatar_url ? (
           <img src={profile.avatar_url} className="w-24 h-24 rounded-full object-cover border-4 border-terong-soft dark:border-gray-800" />
         ) : (
-          <div className="w-24 h-24 rounded-full bg-terong-soft dark:bg-gray-800 flex items-center justify-center font-bold text-3xl text-terong border-4 border-terong-soft dark:border-gray-800">
+          <div className="w-24 h-24 rounded-full bg-terong-soft dark:bg-gray-800 flex items-center justify-center font-bold text-3xl text-terong dark:text-terong-light border-4 border-terong-soft dark:border-gray-800">
             {initial}
           </div>
         )}
@@ -55,20 +55,20 @@ export default function AkunPage() {
         className="w-full flex items-center gap-3.5 rounded-[20px] p-5 mb-4 border-[1.5px] border-dashed border-terong bg-terong-soft text-left"
       >
         <div className="w-11 h-11 rounded-[13px] bg-white flex items-center justify-center shrink-0 shadow-sm">
-          <ShoppingCart size={21} className="text-terong" />
+          <ShoppingCart size={21} className="text-terong dark:text-terong-light" />
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-bold text-sm text-terong-deep dark:text-terong-light">Pindah ke Mode Kasir</p>
           <p className="text-[11.5px] text-terong-deep/75 dark:text-terong-light/75">Mulai transaksi &amp; terima pembayaran</p>
         </div>
-        <ChevronRight size={18} className="text-terong shrink-0" />
+        <ChevronRight size={18} className="text-terong dark:text-terong-light shrink-0" />
       </Link>
 
       {/* Menu */}
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[18px] overflow-hidden mb-4">
         <Link href="/profile" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
-            <User size={19} className="text-terong" />
+            <User size={19} className="text-terong dark:text-terong-light" />
           </span>
           <span className="flex-1">
             <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Profil & Akun</span>
@@ -78,7 +78,7 @@ export default function AkunPage() {
         </Link>
         <Link href="/laporan" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
-            <BarChart3 size={19} className="text-terong" />
+            <BarChart3 size={19} className="text-terong dark:text-terong-light" />
           </span>
           <span className="flex-1">
             <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Laporan</span>
@@ -88,7 +88,7 @@ export default function AkunPage() {
         </Link>
         <Link href="/settings" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
-            <Settings size={19} className="text-terong" />
+            <Settings size={19} className="text-terong dark:text-terong-light" />
           </span>
           <span className="flex-1">
             <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Pengaturan</span>
@@ -98,7 +98,7 @@ export default function AkunPage() {
         </Link>
         <Link href="/bantuan" className="flex items-center gap-3.5 px-5 py-4">
           <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
-            <HelpCircle size={19} className="text-terong" />
+            <HelpCircle size={19} className="text-terong dark:text-terong-light" />
           </span>
           <span className="flex-1">
             <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Bantuan</span>
@@ -111,7 +111,7 @@ export default function AkunPage() {
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[18px] overflow-hidden">
         <button onClick={handleLogout} className="w-full flex items-center gap-3.5 px-5 py-4 text-left">
           <span className="w-11 h-11 rounded-[13px] bg-merah-soft flex items-center justify-center shrink-0">
-            <LogOut size={19} className="text-merah-c" />
+            <LogOut size={19} className="text-merah-c dark:text-merah-light" />
           </span>
           <span className="flex-1">
             <span className="block text-sm font-semibold text-merah-c">Keluar</span>
