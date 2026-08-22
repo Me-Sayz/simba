@@ -3,6 +3,7 @@ import { useState } from 'react'
 import dynamic from 'next/dynamic'
 import { supabase } from '@/lib/supabase'
 import { addNotification } from '@/lib/notifications'
+import { getStoreContext } from '@/lib/getUser'
 import { ScanLine, Package, Plus, Minus, RefreshCw } from 'lucide-react'
 
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
@@ -33,7 +34,7 @@ export default function ScanPage() {
     if (!product || qty < 1) return
     setLoading(true)
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const ctx = await getStoreContext()
     const { error } = await supabase.from('stock_movements').insert({
       product_id: product.id,
       type,
@@ -41,7 +42,8 @@ export default function ScanPage() {
       unit_price: type === 'out' ? product.price : null,
       movement_date: new Date().toISOString().split('T')[0],
       note: type === 'in' ? 'Update cepat via scan' : 'Terjual',
-      user_id: user.id,
+      user_id: ctx.userId,
+      store_id: ctx.storeId,
     })
 
     setLoading(false)

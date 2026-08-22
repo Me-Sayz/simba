@@ -1,6 +1,8 @@
 'use client'
 import React, { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getStoreContext } from '@/lib/getUser'
+import AccessDenied from '@/components/AccessDenied'
 import { FileDown, TrendingUp, TrendingDown, Package, ArrowDownCircle, ArrowUpCircle, DollarSign, ChevronDown, Check } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
 
@@ -59,6 +61,11 @@ export default function LaporanPage() {
   const [exporting, setExporting] = useState(false)
   const presetRef = useRef(null)
   const reportRef = useRef(null)
+  const [access, setAccess] = useState('checking') // 'checking' | 'granted' | 'denied'
+
+  useEffect(() => {
+    getStoreContext().then(ctx => setAccess(ctx?.isOwner ? 'granted' : 'denied'))
+  }, [])
 
   useEffect(() => {
     function handleClick(e) {
@@ -68,7 +75,7 @@ export default function LaporanPage() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  useEffect(() => { fetchAll() }, [preset, dateFrom, dateTo])
+  useEffect(() => { if (access === 'granted') fetchAll() }, [preset, dateFrom, dateTo, access])
 
   function getRange() {
     if (preset === 'custom') return { from: dateFrom, to: dateTo }
@@ -194,6 +201,9 @@ export default function LaporanPage() {
   }
 
   const currentPreset = presetOptions.find(p => p.key === preset)
+
+  if (access === 'checking') return null
+  if (access === 'denied') return <AccessDenied message="Laporan cuma bisa diakses oleh Owner toko." />
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950">

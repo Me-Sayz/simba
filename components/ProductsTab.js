@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import dynamic from 'next/dynamic'
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
 import { addNotification } from '@/lib/notifications'
+import { getStoreContext } from '@/lib/getUser'
 import { inputCls, FieldError } from '@/lib/formHelpers'
 import { deleteImageFromStorage } from '@/lib/productImages'
 import { Search, ScanBarcode, Pencil, Trash2, Plus, Package, ShieldCheck, AlertTriangle, XCircle, X, ChevronDown, Check } from 'lucide-react'
@@ -302,7 +303,7 @@ function ProductFormDrawer({ editProduct, categories, onClose, onSaved, setToast
       return
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
+    const ctx = await getStoreContext()
     const oldImageUrl = editId ? (editProduct?.image_url || null) : null
     const image_url = await uploadImage(oldImageUrl)
 
@@ -319,7 +320,7 @@ function ProductFormDrawer({ editProduct, categories, onClose, onSaved, setToast
     }
 
     if (editId) {
-      const { error } = await supabase.from('products').update(payload).eq('id', editId).eq('user_id', user.id)
+      const { error } = await supabase.from('products').update(payload).eq('id', editId).eq('user_id', ctx.userId)
       if (error) setToast({ type: 'error', text: 'Gagal update produk' })
       else setToast({ type: 'success', text: 'Produk berhasil diupdate' })
     } else {
@@ -327,7 +328,7 @@ function ProductFormDrawer({ editProduct, categories, onClose, onSaved, setToast
       // stock_movements, biar gak dobel-hitung sama insert stok awal di bawah
       const { data: newProduct, error } = await supabase
         .from('products')
-        .insert({ ...payload, stock: 0, user_id: user.id })
+        .insert({ ...payload, stock: 0, user_id: ctx.userId, store_id: ctx.storeId })
         .select()
         .single()
       if (error) {
@@ -343,7 +344,8 @@ function ProductFormDrawer({ editProduct, categories, onClose, onSaved, setToast
           unit_price: parseFloat(form.buy_price) || null,
           note: 'Stok awal',
           movement_date: new Date().toISOString().split('T')[0],
-          user_id: user.id,
+          user_id: ctx.userId,
+          store_id: ctx.storeId,
         })
       }
       setToast({ type: 'success', text: 'Produk berhasil ditambahkan' })
@@ -574,8 +576,12 @@ export default function ProductsTab() {
   const [filterCategory, setFilterCategory] = useState('all')
   const [sortBy, setSortBy] = useState('terbaru')
   const [page, setPage] = useState(1)
+  const [isOwner, setIsOwner] = useState(false)
 
-  useEffect(() => { fetchProducts() }, [])
+  useEffect(() => {
+    fetchProducts()
+    getStoreContext().then(ctx => setIsOwner(ctx?.isOwner ?? false))
+  }, [])
 
   useEffect(() => {
     let result = [...products]
@@ -701,12 +707,14 @@ export default function ProductsTab() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Produk</h1>
             <p className="text-sm text-gray-500 mt-0.5">Total Produk: {products.length.toLocaleString('id-ID')}</p>
           </div>
-          <button
-            onClick={() => { setEditProduct(null); setShowForm(true) }}
-            className="flex items-center gap-2 bg-terong text-white text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-colors font-medium"
-          >
-            <Plus size={16} /> Tambah Produk
-          </button>
+          {isOwner && (
+            <button
+              onClick={() => { setEditProduct(null); setShowForm(true) }}
+              className="flex items-center gap-2 bg-terong text-white text-sm px-4 py-2.5 rounded-xl hover:opacity-90 transition-colors font-medium"
+            >
+              <Plus size={16} /> Tambah Produk
+            </button>
+          )}
         </div>
 
         {/* Stats */}
@@ -808,10 +816,12 @@ export default function ProductsTab() {
                     <td className="px-4 py-3"><StatusBadge stock={p.stock} minStock={p.min_stock} /></td>
                     <td className="px-4 py-3 text-gray-700 dark:text-gray-300">Rp {Number(p.price).toLocaleString('id-ID')}</td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-terong-soft text-gray-400 hover:text-terong dark:hover:text-terong-light transition-colors"><Pencil size={15} /></button>
-                        <button onClick={() => setDeleteTarget(p)} className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-gray-400 hover:text-rose-500 transition-colors"><Trash2 size={15} /></button>
-                      </div>
+                      {isOwner && (
+                        <div className="flex gap-1">
+                          <button onClick={() => handleEdit(p)} className="p-2 rounded-lg hover:bg-terong-soft text-gray-400 hover:text-terong dark:hover:text-terong-light transition-colors"><Pencil size={15} /></button>
+                          <button onClick={() => setDeleteTarget(p)} className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-gray-400 hover:text-rose-500 transition-colors"><Trash2 size={15} /></button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -865,10 +875,12 @@ export default function ProductsTab() {
               </div>
               {p.supplier && <p className="text-xs text-gray-400 mb-1">Supplier: {p.supplier}</p>}
               {p.barcode && <p className="text-xs text-gray-400 font-mono mb-3">{p.barcode}</p>}
-              <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
-                <button onClick={() => handleEdit(p)} className="flex-1 flex items-center justify-center gap-1.5 text-terong dark:text-terong-light text-sm py-1.5 rounded-lg hover:bg-terong-soft"><Pencil size={14} /> Edit</button>
-                <button onClick={() => setDeleteTarget(p)} className="flex-1 flex items-center justify-center gap-1.5 text-rose-400 text-sm py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40"><Trash2 size={14} /> Hapus</button>
-              </div>
+              {isOwner && (
+                <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
+                  <button onClick={() => handleEdit(p)} className="flex-1 flex items-center justify-center gap-1.5 text-terong dark:text-terong-light text-sm py-1.5 rounded-lg hover:bg-terong-soft"><Pencil size={14} /> Edit</button>
+                  <button onClick={() => setDeleteTarget(p)} className="flex-1 flex items-center justify-center gap-1.5 text-rose-400 text-sm py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40"><Trash2 size={14} /> Hapus</button>
+                </div>
+              )}
             </div>
           ))}
         </div>

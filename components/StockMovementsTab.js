@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { addNotification } from '@/lib/notifications'
+import { getStoreContext } from '@/lib/getUser'
 import { inputCls, FieldError } from '@/lib/formHelpers'
 import { Plus, Search, X, Trash2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 
@@ -172,7 +173,7 @@ export default function StockMovementsTab() {
       return
     }
     setLoading(true)
-    const { data: { user } } = await supabase.auth.getUser()
+    const ctx = await getStoreContext()
     const selectedProduct = products.find(p => p.id === form.product_id)
 
     let combinedNote = form.note || ''
@@ -200,8 +201,7 @@ export default function StockMovementsTab() {
     if (editId) {
       ;({ error } = await supabase.from('stock_movements').update(payload).eq('id', editId))
     } else {
-      ;({ error } = await supabase.from('stock_movements').insert({ ...payload, user_id: user.id }))
-    }
+      ;({ error } = await supabase.from('stock_movements').insert({ ...payload, user_id: ctx.userId, store_id: ctx.storeId }))    }
 
     setLoading(false)
     if (error) {

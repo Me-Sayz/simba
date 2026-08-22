@@ -3,11 +3,13 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
-import { ShoppingCart, ChevronRight, Settings, HelpCircle, LogOut, BarChart3, Building2, User } from 'lucide-react'
+import { getStoreContext } from '@/lib/getUser'
+import { ShoppingCart, ChevronRight, Settings, HelpCircle, LogOut, BarChart3, Building2, User, Users } from 'lucide-react'
 
 export default function AkunPage() {
   const [profile, setProfile] = useState(null)
   const [email, setEmail] = useState('')
+  const [isOwner, setIsOwner] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -20,6 +22,8 @@ export default function AkunPage() {
     setEmail(user.email)
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(data)
+    const ctx = await getStoreContext()
+    setIsOwner(ctx?.isOwner ?? false)
   }
 
   async function handleLogout() {
@@ -76,16 +80,30 @@ export default function AkunPage() {
           </span>
           <ChevronRight size={18} className="text-gray-400 shrink-0" />
         </Link>
-        <Link href="/laporan" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
-          <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
-            <BarChart3 size={19} className="text-terong dark:text-terong-light" />
-          </span>
-          <span className="flex-1">
-            <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Laporan</span>
-            <span className="block text-xs text-gray-400 mt-0.5">Lihat laporan dan statistik bisnis</span>
-          </span>
-          <ChevronRight size={18} className="text-gray-400 shrink-0" />
-        </Link>
+        {isOwner && (
+          <Link href="/laporan" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
+              <BarChart3 size={19} className="text-terong dark:text-terong-light" />
+            </span>
+            <span className="flex-1">
+              <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Laporan</span>
+              <span className="block text-xs text-gray-400 mt-0.5">Lihat laporan dan statistik bisnis</span>
+            </span>
+            <ChevronRight size={18} className="text-gray-400 shrink-0" />
+          </Link>
+        )}
+        {isOwner && (
+          <Link href="/akun/staff" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
+              <Users size={19} className="text-terong dark:text-terong-light" />
+            </span>
+            <span className="flex-1">
+              <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Kelola Staff</span>
+              <span className="block text-xs text-gray-400 mt-0.5">Undang &amp; kelola staff toko</span>
+            </span>
+            <ChevronRight size={18} className="text-gray-400 shrink-0" />
+          </Link>
+        )}
         <Link href="/settings" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
           <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
             <Settings size={19} className="text-terong dark:text-terong-light" />

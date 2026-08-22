@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { getStoreContext } from '@/lib/getUser'
 import { Package, ScanLine, Plus, AlertTriangle, TrendingUp, Wallet, Receipt } from 'lucide-react'
 import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts'
 import NotificationPanel from '@/components/NotificationPanel'
@@ -50,6 +51,7 @@ export default function Dashboard() {
   const [topProducts, setTopProducts] = useState([])
   const [chartData, setChartData] = useState([])
   const [loading, setLoading] = useState(true)
+  const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => { fetchProfile() }, [])
   useEffect(() => { fetchPeriodData() }, [period])
@@ -60,6 +62,8 @@ export default function Dashboard() {
     if (!user) return
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     setProfile(data)
+    const ctx = await getStoreContext()
+    setIsOwner(ctx?.isOwner ?? false)
   }
 
   async function fetchPeriodData() {
@@ -198,7 +202,9 @@ export default function Dashboard() {
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 mb-4">
                 <h2 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">Penjualan 7 Hari Terakhir</h2>
-                <Link href="/laporan" className="text-xs font-semibold text-terong dark:text-terong-light hover:underline self-start sm:self-auto">Lihat Laporan Lengkap →</Link>
+                {isOwner && (
+                  <Link href="/laporan" className="text-xs font-semibold text-terong dark:text-terong-light hover:underline self-start sm:self-auto">Lihat Laporan Lengkap →</Link>
+                )}
               </div>
               <div className="h-[140px] md:h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
