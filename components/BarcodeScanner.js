@@ -185,7 +185,9 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
               <span className="absolute -top-0.5 -right-0.5 w-7 h-7 border-t-[3px] border-r-[3px] border-white rounded-tr-xl" />
               <span className="absolute -bottom-0.5 -left-0.5 w-7 h-7 border-b-[3px] border-l-[3px] border-white rounded-bl-xl" />
               <span className="absolute -bottom-0.5 -right-0.5 w-7 h-7 border-b-[3px] border-r-[3px] border-white rounded-br-xl" />
-              <div className="scanner-laser" />
+              <div className="scanner-laser-track">
+                <div className="scanner-laser" />
+              </div>
             </div>
             <p className="absolute bottom-3 left-0 right-0 text-center text-white text-xs font-semibold drop-shadow">
               Arahkan kamera ke barcode produk
@@ -194,18 +196,29 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
         )}
 
         <style jsx>{`
+          /* wrapper ini yang di-animate — tingginya 100% kotak viewfinder,
+             jadi translateY(%) di bawah dihitung dari tinggi kotak itu,
+             bukan dari tinggi garis laser (yg cuma 2px) */
+          .scanner-laser-track {
+            position: absolute;
+            inset: 0;
+            animation: scanMove 2.2s ease-in-out infinite;
+            will-change: transform;
+          }
           .scanner-laser {
             position: absolute;
+            top: 0;
             left: 6%;
             right: 6%;
             height: 2px;
             background: linear-gradient(90deg, transparent, #A78BFA, transparent);
             box-shadow: 0 0 8px 2px rgba(167, 139, 250, 0.7);
-            animation: scanMove 2.2s ease-in-out infinite;
           }
+          /* transform, bukan top — jalan di compositor thread jadi gak
+             rebutan CPU sama proses decode barcode di main thread */
           @keyframes scanMove {
-            0%, 100% { top: 12%; }
-            50% { top: 85%; }
+            0%, 100% { transform: translateY(12%); }
+            50% { transform: translateY(85%); }
           }
         `}</style>
 
