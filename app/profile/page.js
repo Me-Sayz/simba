@@ -533,7 +533,7 @@ export default function ProfilePage() {
               <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Info akun</p>
               <div className="flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
                 {[
-                  { icon: Crown, label: 'Role akun', value: <span className="text-xs font-medium bg-terong-soft text-terong-deep dark:text-terong-light px-2.5 py-1 rounded-full">Owner</span> },
+                  { icon: Crown, label: 'Role akun', value: <span className="text-xs font-medium bg-terong-soft text-terong-deep dark:text-terong-light px-2.5 py-1 rounded-full">{isOwner ? 'Owner' : 'Staff'}</span> },
                   { icon: LogIn, label: 'Login terakhir', value: <span className="text-sm text-gray-600 dark:text-gray-300">{lastSign}</span> },
                   { icon: Monitor, label: 'Perangkat', value: <span className="text-sm text-gray-600 dark:text-gray-300">Browser</span> },
                 ].map(({ icon: Icon, label, value }) => (
