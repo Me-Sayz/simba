@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getStoreContext } from '@/lib/getUser'
 import { useRouter } from 'next/navigation'
 import {
   Camera, User, Store, Mail, Lock, AlertTriangle,
@@ -57,6 +58,9 @@ export default function ProfilePage() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [editModal, setEditModal] = useState(false)
   const [editForm, setEditForm] = useState({ name: '', store_name: '' })
+  const [isOwner, setIsOwner] = useState(false)
+  const [storeId, setStoreId] = useState(null)
+  const [storeName, setStoreName] = useState('')
   const [modal, setModal] = useState(null)
   const [emailStep, setEmailStep] = useState(1)
   const [emailOtp, setEmailOtp] = useState('')
@@ -82,11 +86,13 @@ export default function ProfilePage() {
     setLastSign(user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-')
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (data) { setProfile(data); setAvatarPreview(data.avatar_url || null) }
+    const ctx = await getStoreContext()
+    if (ctx) { setIsOwner(ctx.isOwner); setStoreId(ctx.storeId); setStoreName(ctx.storeName || '') }
     setFetching(false)
   }
 
   function openEditModal() {
-    setEditForm({ name: profile.name || '', store_name: profile.store_name || '' })
+    setEditForm({ name: profile.name || '', store_name: storeName || '' })  
     setPendingAvatarFile(null)
     setPendingAvatarPreview(null)
     setEditModal(true)
@@ -116,11 +122,21 @@ export default function ProfilePage() {
       avatar_url = urlData.publicUrl
     }
     const { error } = await supabase.from('profiles').update({
-      name: editForm.name, store_name: editForm.store_name, avatar_url, updated_at: new Date().toISOString()
+      name: editForm.name, avatar_url, updated_at: new Date().toISOString()
     }).eq('id', user.id)
     if (error) { setToast({ type: 'error', text: 'Gagal menyimpan: ' + error.message }) }
     else {
-      setProfile(p => ({ ...p, ...editForm, avatar_url }))
+      let nextStoreName = storeName
+      if (isOwner && editForm.store_name !== storeName) {
+        const { error: storeError } = await supabase.from('stores').update({ name: editForm.store_name }).eq('id', storeId)
+        if (storeError) {
+          setToast({ type: 'error', text: 'Nama disimpan, tapi gagal update nama toko: ' + storeError.message })
+        } else {
+          nextStoreName = editForm.store_name
+          setStoreName(editForm.store_name)
+        }
+      }
+      setProfile(p => ({ ...p, name: editForm.name, avatar_url }))
       setAvatarPreview(avatar_url)
       setPendingAvatarFile(null); setPendingAvatarPreview(null)
       setToast({ type: 'success', text: 'Profil berhasil disimpan' })
@@ -242,7 +258,7 @@ export default function ProfilePage() {
       {/* Edit Profile Modal */}
       {editModal && (
         <Modal title="Edit Profil" onClose={() => {
-          const hasChanges = editForm.name !== profile.name || editForm.store_name !== profile.store_name || pendingAvatarFile !== null
+          const hasChanges = editForm.name !== profile.name || editForm.store_name !== storeName || pendingAvatarFile !== null
           if (hasChanges) { setShowCancelConfirm(true); return }
           setEditModal(false)
         }}>
@@ -266,14 +282,22 @@ export default function ProfilePage() {
               <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Nama Lengkap</label>
               <input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} placeholder="Nama kamu" className={inputCls} />
             </div>
-            <div>
-              <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Nama Toko / Bisnis</label>
-              <input value={editForm.store_name} onChange={e => setEditForm(f => ({ ...f, store_name: e.target.value }))} placeholder="Nama toko atau bisnis" className={inputCls} />
-            </div>
+            {isOwner ? (
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Nama Toko / Bisnis</label>
+                <input value={editForm.store_name} onChange={e => setEditForm(f => ({ ...f, store_name: e.target.value }))} placeholder="Nama toko atau bisnis" className={inputCls} />
+              </div>
+            ) : (
+              <div>
+                <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">Nama Toko / Bisnis</label>
+                <p className="text-sm text-gray-600 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 rounded-xl px-3 py-2.5">{storeName || '-'}</p>
+                <p className="text-xs text-gray-400 mt-1">Nama toko cuma bisa diubah oleh Owner</p>
+              </div>
+            )}
             <p className="text-xs text-gray-400 dark:text-gray-500">Untuk ganti email, gunakan menu Keamanan Akun.</p>
             <div className="flex gap-2">
               <button onClick={() => {
-                const hasChanges = editForm.name !== profile.name || editForm.store_name !== profile.store_name || pendingAvatarFile !== null
+                const hasChanges = editForm.name !== profile.name || editForm.store_name !== storeName || pendingAvatarFile !== null
                 if (hasChanges) { setShowCancelConfirm(true); return }
                 setEditModal(false)
               }} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800">Batal</button>
@@ -441,9 +465,9 @@ export default function ProfilePage() {
                 <p className="text-sm text-gray-400">{email}</p>
                 <CheckCircle2 size={13} className="text-emerald-500 shrink-0" strokeWidth={2.5} />
               </div>
-              {profile.store_name && (
+              {storeName && (
                 <span className="inline-flex items-center gap-1.5 text-xs bg-terong-soft text-terong-deep dark:text-terong-light px-2.5 py-1 rounded-full mt-2 font-medium">
-                  <Building2 size={11} /> {profile.store_name}
+                  <Building2 size={11} /> {storeName}
                 </span>
               )}
             </div>
@@ -463,7 +487,7 @@ export default function ProfilePage() {
             <div className="flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
               {[
                 { icon: User, label: 'Nama lengkap', value: profile.name },
-                { icon: Building2, label: 'Nama toko / bisnis', value: profile.store_name },
+                { icon: Building2, label: 'Nama toko / bisnis', value: storeName },
                 { icon: Mail, label: 'Email', value: email },
                 { icon: Clock, label: 'Bergabung sejak', value: joinedAt },
               ].map(({ icon: Icon, label, value }) => (

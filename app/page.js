@@ -143,7 +143,7 @@ export default function Dashboard() {
       {/* Topbar */}
       <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{greeting()}, {profile?.name || 'Owner'} 👋</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">{greeting()}, {profile?.name || 'Kak'} 👋</h1>
           <p className="text-sm text-gray-400 mt-0.5">Ringkasan stok & aktivitas tokomu.</p>
         </div>
         <NotificationPanel mode="mobile" />

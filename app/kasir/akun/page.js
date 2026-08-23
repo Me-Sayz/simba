@@ -3,10 +3,12 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
+import { getStoreContext } from '@/lib/getUser'
 import { LayoutDashboard, ChevronRight, LogOut, Settings, HelpCircle, Building2 } from 'lucide-react'
 
 export default function KasirAkunPage() {
   const [profile, setProfile] = useState(null)
+  const [storeName, setStoreName] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -15,6 +17,8 @@ export default function KasirAkunPage() {
       if (!user) return
       const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
       setProfile(data)
+      const ctx = await getStoreContext()
+      setStoreName(ctx?.storeName ?? null)
     })()
   }, [])
 
@@ -36,9 +40,9 @@ export default function KasirAkunPage() {
           </div>
         )}
         <p className="font-bold text-lg text-gray-900 dark:text-gray-100 mt-3">{profile?.name || 'User'}</p>
-        {profile?.store_name && (
+        {storeName && (
           <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
-            <Building2 size={11} /> {profile.store_name}
+            <Building2 size={11} /> {storeName}
           </p>
         )}
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Kasir aktif</p>

@@ -10,6 +10,7 @@ export default function AkunPage() {
   const [profile, setProfile] = useState(null)
   const [email, setEmail] = useState('')
   const [isOwner, setIsOwner] = useState(false)
+  const [storeName, setStoreName] = useState(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function AkunPage() {
     setProfile(data)
     const ctx = await getStoreContext()
     setIsOwner(ctx?.isOwner ?? false)
+    setStoreName(ctx?.storeName ?? null)
   }
 
   async function handleLogout() {
@@ -45,9 +47,9 @@ export default function AkunPage() {
           </div>
         )}
         <p className="font-bold text-lg text-gray-900 dark:text-gray-100 mt-3">{profile?.name || 'User'}</p>
-        {profile?.store_name && (
+        {storeName && (
           <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-1">
-            <Building2 size={11} /> {profile.store_name}
+            <Building2 size={11} /> {storeName}
           </p>
         )}
         <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">{email}</p>

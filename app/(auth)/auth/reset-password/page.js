@@ -28,6 +28,9 @@ export default function ResetPasswordPage() {
       setError(error.message)
       setLoading(false)
     } else {
+      // kalau ini staff yang lagi terima undangan, tandain status jadi 'active'.
+      // Buat Owner/reset password biasa, fungsi ini gak ngapa-ngapain (no-op).
+      await supabase.rpc('accept_invite')
       setSuccess(true)
       setLoading(false)
       setTimeout(() => router.push('/login'), 3000)
