@@ -32,5 +32,5 @@ export async function GET(request) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=invalid_link`)
+  return NextResponse.redirect(`${origin}/auth/login?error=invalid_link`)
 }
