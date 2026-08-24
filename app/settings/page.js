@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { getStoreContext } from '@/lib/getUser'
 import Link from 'next/link'
 import { useTheme } from 'next-themes'
 import { syncLowStockNotifs } from '@/lib/notifications'
@@ -48,6 +49,7 @@ export default function SettingsPage() {
   const [defaultUnit, setDefaultUnit] = useState('pcs')
   const [defaultMinStock, setDefaultMinStock] = useState(5)
   const [useDefaults, setUseDefaults] = useState(false)
+  const [isOwner, setIsOwner] = useState(false)
   const [notifs, setNotifs] = useState({
     notifLowStock: true,
     notifNewProduct: true,
@@ -66,6 +68,7 @@ export default function SettingsPage() {
       setUseDefaults(prefs.useDefaults || false)
       if (prefs.notifs) setNotifs(prefs.notifs)
     }
+    getStoreContext().then(ctx => setIsOwner(ctx?.isOwner ?? false))
   }, [])
 
   function savePrefs(updates) {
@@ -183,7 +186,8 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                {/* Nilai Default Produk */}
+                {/* Nilai Default Produk — cuma Owner, karena cuma Owner yang bisa tambah produk */}
+                {isOwner && (
                 <div className={`border-t border-gray-100 dark:border-gray-800 pt-3 flex flex-col gap-0 transition-opacity ${!useDefaults ? 'opacity-50' : ''}`}>
                   <div className="flex items-center justify-between pb-3">
                     <div>
@@ -216,6 +220,7 @@ export default function SettingsPage() {
                       className={`border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-sm w-20 text-center bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 ${!useDefaults ? 'cursor-not-allowed' : ''}`} />
                   </div>
                 </div>
+                )}
               </div>
             </div>
 

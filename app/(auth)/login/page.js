@@ -75,6 +75,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState('')
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
@@ -92,6 +93,20 @@ export default function LoginPage() {
     } else {
       router.push('/')
     }
+  }
+
+  async function handleGoogleLogin() {
+    setGoogleLoading(true)
+    setError('')
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    })
+    if (error) {
+      setError(error.message)
+      setGoogleLoading(false)
+    }
+    // kalau sukses, browser langsung diarahin ke Google — gak perlu router.push di sini
   }
 
   return (
@@ -457,6 +472,39 @@ export default function LoginPage() {
           animation: spin 0.7s linear infinite;
         }
 
+        /* Google button */
+        .btn-google {
+          width: 100%;
+          padding: 13px;
+          background: #ffffff;
+          border: 1.5px solid #e2e8f0;
+          border-radius: 12px;
+          font-size: 14px;
+          font-family: 'Poppins', sans-serif;
+          font-weight: 500;
+          color: #334155;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          margin-bottom: 12px;
+          transition: border-color 0.2s, background 0.2s, transform 0.15s;
+        }
+        .btn-google:hover:not(:disabled) {
+          border-color: #cbd5e1;
+          background: #f8fafc;
+          transform: translateY(-1px);
+        }
+        .btn-google:disabled { opacity: 0.68; cursor: not-allowed; }
+        .spinner-dark {
+          width: 16px; height: 16px;
+          border: 2px solid rgba(51,65,85,0.2);
+          border-top-color: #334155;
+          border-radius: 50%;
+          animation: spin 0.7s linear infinite;
+        }
+
         /* ── MOBILE ≤640px ── */
         .mobile-logo { display: none; }
 
@@ -652,6 +700,23 @@ export default function LoginPage() {
               <span className="divider-text">atau</span>
               <div className="divider-line" />
             </div>
+
+            {/* Google */}
+            <button type="button" className="btn-google" onClick={handleGoogleLogin} disabled={googleLoading}>
+              {googleLoading ? (
+                <div className="spinner-dark" />
+              ) : (
+                <>
+                  <svg width="16" height="16" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.78-2.4 3.63v3.02h3.88c2.27-2.09 3.57-5.17 3.57-8.84z"/>
+                    <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3.02c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.12C3.24 21.3 7.29 24 12 24z"/>
+                    <path fill="#FBBC05" d="M5.27 14.27c-.24-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.62H1.26A11.97 11.97 0 000 12c0 1.94.46 3.77 1.26 5.38l4.01-3.12z"/>
+                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.29 0 3.24 2.7 1.26 6.62l4.01 3.12C6.22 6.86 8.87 4.75 12 4.75z"/>
+                  </svg>
+                  Masuk dengan Google
+                </>
+              )}
+            </button>
 
             {/* Register */}
             <Link href="/register" className="btn-register">

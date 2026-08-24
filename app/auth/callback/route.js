@@ -4,10 +4,10 @@ import { cookies } from 'next/headers'
 
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url)
-  const token_hash = searchParams.get('token_hash')
-  const type = searchParams.get('type')
+  const code = searchParams.get('code')
+  const next = searchParams.get('next') ?? '/'
 
-  if (token_hash && type) {
+  if (code) {
     const cookieStore = await cookies()
 
     const supabase = createServerClient(
@@ -25,12 +25,11 @@ export async function GET(request) {
       }
     )
 
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash })
-
+    const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(`${origin}/auth/reset-password`)
+      return NextResponse.redirect(`${origin}${next}`)
     }
   }
 
-  return NextResponse.redirect(`${origin}/login?error=invalid_link`)
+  return NextResponse.redirect(`${origin}/login?error=oauth_failed`)
 }
