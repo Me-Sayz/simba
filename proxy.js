@@ -17,7 +17,7 @@ export async function proxy(req) {
 
   const { data: { session } } = await supabase.auth.getSession()
 
-  const publicPaths = ['/login', '/register', '/forgot-password', '/auth/confirm', '/auth/reset-password']
+  const publicPaths = ['/login', '/register', '/forgot-password', '/auth/confirm', '/auth/reset-password', '/auth/callback']
   if (!session && !publicPaths.includes(req.nextUrl.pathname)) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
@@ -28,4 +28,3 @@ export async function proxy(req) {
 export const config = {
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.png|.*\\.jpg|.*\\.svg|.*\\.webm|.*\\.mp4|.*\\.ico).*)'],
 }
-
