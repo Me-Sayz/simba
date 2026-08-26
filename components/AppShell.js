@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase'
 import MonitoringNav from './MonitoringNav'
 import KasirNav from './KasirNav'
 
-const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/auth/confirm', '/auth/reset-password']
+const AUTH_PATHS = ['/login', '/register', '/forgot-password', '/auth/confirm', '/auth/reset-password', '/auth/callback']
 
 export default function AppShell() {
   const pathname = usePathname()

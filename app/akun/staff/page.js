@@ -75,9 +75,18 @@ export default function KelolaStaffPage() {
 
   async function handleRemove() {
     if (!removeTarget) return
-    const { error } = await supabase.from('store_members').delete().eq('id', removeTarget.id)
-    if (error) {
-      setToast({ type: 'error', text: 'Gagal menghapus staff' })
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/remove-staff', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session?.access_token}`,
+      },
+      body: JSON.stringify({ staffMemberId: removeTarget.id }),
+    })
+    const result = await res.json()
+    if (!res.ok) {
+      setToast({ type: 'error', text: result.error || 'Gagal menghapus staff' })
     } else {
       setToast({ type: 'success', text: 'Staff berhasil dihapus dari toko' })
       fetchMembers()

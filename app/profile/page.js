@@ -61,17 +61,24 @@ export default function ProfilePage() {
   const [isOwner, setIsOwner] = useState(false)
   const [storeId, setStoreId] = useState(null)
   const [storeName, setStoreName] = useState('')
+  const [hasPassword, setHasPassword] = useState(true)
   const [modal, setModal] = useState(null)
   const [emailStep, setEmailStep] = useState(1)
   const [emailOtp, setEmailOtp] = useState('')
   const [newEmail, setNewEmail] = useState('')
   const [otpLoading, setOtpLoading] = useState(false)
   const [pwForm, setPwForm] = useState({ current: '', newPass: '', confirm: '' })
+  const [pwOtpStep, setPwOtpStep] = useState(1)
+  const [pwOtp, setPwOtp] = useState('')
+  const [pwOtpLoading, setPwOtpLoading] = useState(false)
   const [showPw, setShowPw] = useState({ current: false, newPass: false, confirm: false })
   const [pwError, setPwError] = useState('')
   const [pwLoading, setPwLoading] = useState(false)
   const [deleteInput, setDeleteInput] = useState('')
   const [deletePassword, setDeletePassword] = useState('')
+  const [deleteOtpStep, setDeleteOtpStep] = useState(1)
+  const [deleteOtp, setDeleteOtp] = useState('')
+  const [deleteOtpLoading, setDeleteOtpLoading] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [showDeletePw, setShowDeletePw] = useState(false)
 
@@ -84,6 +91,8 @@ export default function ProfilePage() {
     setEmail(user?.email || '')
     setJoinedAt(user?.created_at ? new Date(user.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-')
     setLastSign(user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-')
+    // user yang login via Google doang (belum pernah set password) gak punya identity 'email'
+    setHasPassword((user?.identities || []).some(i => i.provider === 'email'))
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (data) { setProfile(data); setAvatarPreview(data.avatar_url || null) }
     const ctx = await getStoreContext()
@@ -190,17 +199,42 @@ export default function ProfilePage() {
     else { setToast({ type: 'success', text: 'Link konfirmasi dikirim ke email baru' }); setModal(null); setEmailStep(1); setEmailOtp(''); setNewEmail('') }
   }
 
+  async function handleSendPwOtp() {
+    setPwOtpLoading(true)
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
+    if (error) setPwError(error.message)
+    else { setPwOtpStep(2); setPwError('') }
+    setPwOtpLoading(false)
+  }
+
+  async function handleVerifyPwOtp() {
+    setPwOtpLoading(true)
+    const { error } = await supabase.auth.verifyOtp({ email, token: pwOtp, type: 'email' })
+    if (error) setPwError('Kode OTP salah atau kadaluarsa')
+    else { setPwOtpStep(3); setPwError('') }
+    setPwOtpLoading(false)
+  }
+
   async function handleChangePassword() {
     setPwError('')
-    if (!pwForm.current) { setPwError('Masukkan password saat ini'); return }
+    if (hasPassword && !pwForm.current) { setPwError('Masukkan password saat ini'); return }
     if (pwForm.newPass.length < 6) { setPwError('Password baru minimal 6 karakter'); return }
     if (pwForm.newPass !== pwForm.confirm) { setPwError('Konfirmasi password tidak cocok'); return }
     setPwLoading(true)
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: pwForm.current })
-    if (signInError) { setPwError('Password saat ini salah'); setPwLoading(false); return }
+    if (hasPassword) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: pwForm.current })
+      if (signInError) { setPwError('Password saat ini salah'); setPwLoading(false); return }
+    }
+    // akun tanpa password (Google) udah wajib lolos verifikasi OTP (pwOtpStep 3) sebelum sampai sini
     const { error } = await supabase.auth.updateUser({ password: pwForm.newPass })
     if (error) setPwError(error.message)
-    else { setToast({ type: 'success', text: 'Password berhasil diubah' }); setModal(null); setPwForm({ current: '', newPass: '', confirm: '' }) }
+    else {
+      setToast({ type: 'success', text: hasPassword ? 'Password berhasil diubah' : 'Password berhasil dibuat' })
+      setModal(null)
+      setPwForm({ current: '', newPass: '', confirm: '' })
+      setPwOtpStep(1); setPwOtp('')
+      setHasPassword(true)
+    }
     setPwLoading(false)
   }
 
@@ -212,17 +246,38 @@ export default function ProfilePage() {
     else { setToast({ type: 'success', text: 'Link reset password dikirim ke email' }); setModal(null) }
   }
 
+  async function handleSendDeleteOtp() {
+    setDeleteOtpLoading(true)
+    const { error } = await supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: false } })
+    if (error) setToast({ type: 'error', text: error.message })
+    else setDeleteOtpStep(2)
+    setDeleteOtpLoading(false)
+  }
+
+  async function handleVerifyDeleteOtp() {
+    setDeleteOtpLoading(true)
+    const { error } = await supabase.auth.verifyOtp({ email, token: deleteOtp, type: 'email' })
+    if (error) setToast({ type: 'error', text: 'Kode OTP salah atau kadaluarsa' })
+    else setDeleteOtpStep(3)
+    setDeleteOtpLoading(false)
+  }
+
   async function handleDeleteAccount() {
-    if (deleteInput !== 'HAPUS' || !deletePassword) return
+    if (deleteInput !== 'HAPUS') return
+    if (hasPassword && !deletePassword) return
+    if (!hasPassword && deleteOtpStep !== 3) return
     setDeleteLoading(true)
-  
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: deletePassword })
-    if (signInError) {
-      setToast({ type: 'error', text: 'Password salah' })
-      setDeleteLoading(false)
-      return
+
+    if (hasPassword) {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email, password: deletePassword })
+      if (signInError) {
+        setToast({ type: 'error', text: 'Password salah' })
+        setDeleteLoading(false)
+        return
+      }
     }
-  
+    // akun tanpa password (Google) udah wajib lolos verifikasi OTP (deleteOtpStep 3) sebelum sampai sini
+
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/delete-account', {
       method: 'DELETE',
@@ -374,9 +429,43 @@ export default function ProfilePage() {
       )}
 
       {modal === 'password' && (
-        <Modal title="Ganti Password" onClose={() => { setModal(null); setPwForm({ current: '', newPass: '', confirm: '' }); setPwError('') }}>
+        <Modal title={hasPassword ? 'Ganti Password' : 'Buat Password'} onClose={() => { setModal(null); setPwForm({ current: '', newPass: '', confirm: '' }); setPwError(''); setPwOtpStep(1); setPwOtp('') }}>
+          {!hasPassword && pwOtpStep === 1 && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Akun kamu login pakai Google dan belum punya password. Buat password biar bisa login pakai email juga — verifikasi dulu lewat kode OTP yang dikirim ke email kamu.</p>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-sm text-gray-700 dark:text-gray-200 font-medium">{email}</div>
+              {pwError && <p className="text-xs text-rose-500 bg-rose-50 dark:bg-rose-950 p-2 rounded-lg">{pwError}</p>}
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setModal(null)} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 text-sm text-gray-600 dark:text-gray-400">Batal</button>
+                <button onClick={handleSendPwOtp} disabled={pwOtpLoading} className="flex-1 bg-terong text-white rounded-xl py-2.5 text-sm font-medium hover:opacity-90">{pwOtpLoading ? 'Mengirim...' : 'Kirim Kode OTP'}</button>
+              </div>
+            </div>
+          )}
+          {!hasPassword && pwOtpStep === 2 && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Masukkan kode OTP yang dikirim ke <span className="font-medium text-gray-700 dark:text-gray-200">{email}</span></p>
+              <input value={pwOtp} onChange={e => setPwOtp(e.target.value)} placeholder="Masukkan kode OTP" className={inputCls + ' text-center tracking-widest text-lg'} />
+              {pwError && <p className="text-xs text-rose-500 bg-rose-50 dark:bg-rose-950 p-2 rounded-lg">{pwError}</p>}
+              <button onClick={handleSendPwOtp} className="text-xs text-terong hover:underline text-center">Kirim ulang kode</button>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setPwOtpStep(1)} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 text-sm text-gray-600 dark:text-gray-400">Kembali</button>
+                <button onClick={handleVerifyPwOtp} disabled={pwOtpLoading || !pwOtp} className="flex-1 bg-terong text-white rounded-xl py-2.5 text-sm font-medium hover:opacity-90 disabled:opacity-50">{pwOtpLoading ? 'Memverifikasi...' : 'Verifikasi'}</button>
+              </div>
+            </div>
+          )}
+          {(hasPassword || pwOtpStep === 3) && (
           <div className="flex flex-col gap-3">
-            {[{ key: 'current', label: 'Password Saat Ini' }, { key: 'newPass', label: 'Password Baru' }, { key: 'confirm', label: 'Konfirmasi Password Baru' }].map(({ key, label }) => (
+            {!hasPassword && (
+              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950 p-3 rounded-xl">
+                <Check size={14} className="text-emerald-600 shrink-0" />
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">Identitas terverifikasi. Buat password baru kamu.</p>
+              </div>
+            )}
+            {[
+              ...(hasPassword ? [{ key: 'current', label: 'Password Saat Ini' }] : []),
+              { key: 'newPass', label: hasPassword ? 'Password Baru' : 'Password' },
+              { key: 'confirm', label: 'Konfirmasi Password' },
+            ].map(({ key, label }) => (
               <div key={key}>
                 <label className="text-xs text-gray-500 dark:text-gray-400 mb-1 block">{label}</label>
                 <div className="relative">
@@ -390,17 +479,45 @@ export default function ProfilePage() {
               </div>
             ))}
             {pwError && <p className="text-xs text-rose-500 bg-rose-50 dark:bg-rose-950 p-2 rounded-lg">{pwError}</p>}
-            <button onClick={handleResetPassword} className="text-xs text-terong hover:underline text-left">Lupa password? Kirim link reset ke email</button>
+            {hasPassword && (
+              <button onClick={handleResetPassword} className="text-xs text-terong hover:underline text-left">Lupa password? Kirim link reset ke email</button>
+            )}
             <div className="flex gap-2 pt-1">
               <button onClick={() => { setModal(null); setPwForm({ current: '', newPass: '', confirm: '' }); setPwError('') }} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 text-sm text-gray-600 dark:text-gray-400">Batal</button>
               <button onClick={handleChangePassword} disabled={pwLoading} className="flex-1 bg-terong text-white rounded-xl py-2.5 text-sm font-medium hover:opacity-90">{pwLoading ? 'Menyimpan...' : 'Simpan'}</button>
             </div>
           </div>
+          )}
         </Modal>
       )}
 
       {modal === 'delete' && (
-        <Modal title="Hapus Akun" onClose={() => { setModal(null); setDeleteInput(''); setDeletePassword(''); setShowDeletePw(false) }}>
+        <Modal title="Hapus Akun" onClose={() => { setModal(null); setDeleteInput(''); setDeletePassword(''); setShowDeletePw(false); setDeleteOtpStep(1); setDeleteOtp('') }}>
+          {!hasPassword && deleteOtpStep === 1 && (
+            <div className="flex flex-col gap-3">
+              <div className="w-12 h-12 bg-rose-100 dark:bg-rose-950 rounded-full flex items-center justify-center mx-auto">
+                <AlertTriangle size={20} className="text-rose-500" />
+              </div>
+              <p className="text-sm text-gray-500 dark:text-gray-400 text-center">Akun kamu login pakai Google. Verifikasi dulu lewat kode OTP yang dikirim ke email kamu sebelum lanjut hapus akun.</p>
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-xl p-3 text-sm text-gray-700 dark:text-gray-200 font-medium">{email}</div>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setModal(null)} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 text-sm text-gray-600 dark:text-gray-400">Batal</button>
+                <button onClick={handleSendDeleteOtp} disabled={deleteOtpLoading} className="flex-1 bg-rose-500 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-rose-600">{deleteOtpLoading ? 'Mengirim...' : 'Kirim Kode OTP'}</button>
+              </div>
+            </div>
+          )}
+          {!hasPassword && deleteOtpStep === 2 && (
+            <div className="flex flex-col gap-3">
+              <p className="text-sm text-gray-500 dark:text-gray-400">Masukkan kode OTP yang dikirim ke <span className="font-medium text-gray-700 dark:text-gray-200">{email}</span></p>
+              <input value={deleteOtp} onChange={e => setDeleteOtp(e.target.value)} placeholder="Masukkan kode OTP" className={inputCls + ' text-center tracking-widest text-lg'} />
+              <button onClick={handleSendDeleteOtp} className="text-xs text-terong hover:underline text-center">Kirim ulang kode</button>
+              <div className="flex gap-2 pt-1">
+                <button onClick={() => setDeleteOtpStep(1)} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 text-sm text-gray-600 dark:text-gray-400">Kembali</button>
+                <button onClick={handleVerifyDeleteOtp} disabled={deleteOtpLoading || !deleteOtp} className="flex-1 bg-rose-500 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-rose-600 disabled:opacity-50">{deleteOtpLoading ? 'Memverifikasi...' : 'Verifikasi'}</button>
+              </div>
+            </div>
+          )}
+          {(hasPassword || deleteOtpStep === 3) && (
           <div className="flex flex-col gap-3">
             <div className="w-12 h-12 bg-rose-100 dark:bg-rose-950 rounded-full flex items-center justify-center mx-auto">
               <AlertTriangle size={20} className="text-rose-500" />
@@ -410,32 +527,40 @@ export default function ProfilePage() {
               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ketik <span className="font-bold text-rose-500">HAPUS</span> untuk konfirmasi:</p>
               <input value={deleteInput} onChange={e => setDeleteInput(e.target.value)} placeholder="HAPUS" className={inputCls} />
             </div>
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Masukkan password kamu:</p>
-              <div className="relative">
-                <input
-                  type={showDeletePw ? 'text' : 'password'}
-                  value={deletePassword}
-                  onChange={e => setDeletePassword(e.target.value)}
-                  placeholder="••••••••"
-                  className={inputCls + ' pr-10'}
-                />
-                <button type="button" onClick={() => setShowDeletePw(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
-                  {showDeletePw ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
+            {hasPassword ? (
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Masukkan password kamu:</p>
+                <div className="relative">
+                  <input
+                    type={showDeletePw ? 'text' : 'password'}
+                    value={deletePassword}
+                    onChange={e => setDeletePassword(e.target.value)}
+                    placeholder="••••••••"
+                    className={inputCls + ' pr-10'}
+                  />
+                  <button type="button" onClick={() => setShowDeletePw(s => !s)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                    {showDeletePw ? <EyeOff size={15} /> : <Eye size={15} />}
+                  </button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950 p-3 rounded-xl">
+                <Check size={14} className="text-emerald-600 shrink-0" />
+                <p className="text-xs text-emerald-700 dark:text-emerald-400">Identitas terverifikasi lewat OTP.</p>
+              </div>
+            )}
             <div className="flex gap-2 pt-1">
-              <button onClick={() => { setModal(null); setDeleteInput(''); setDeletePassword(''); setShowDeletePw(false) }} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 text-sm text-gray-600 dark:text-gray-400">Batal</button>
+              <button onClick={() => { setModal(null); setDeleteInput(''); setDeletePassword(''); setShowDeletePw(false); setDeleteOtpStep(1); setDeleteOtp('') }} className="flex-1 border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 text-sm text-gray-600 dark:text-gray-400">Batal</button>
               <button
                 onClick={handleDeleteAccount}
-                disabled={deleteInput !== 'HAPUS' || !deletePassword || deleteLoading}
+                disabled={deleteInput !== 'HAPUS' || (hasPassword && !deletePassword) || deleteLoading}
                 className="flex-1 bg-rose-500 text-white rounded-xl py-2.5 text-sm font-medium hover:bg-rose-600 disabled:opacity-40"
               >
                 {deleteLoading ? 'Menghapus...' : 'Hapus Akun'}
               </button>
             </div>
           </div>
+          )}
         </Modal>
       )}
 
@@ -511,7 +636,7 @@ export default function ProfilePage() {
               <div className="flex flex-col divide-y divide-gray-100 dark:divide-gray-800">
                 {[
                   { icon: Mail, label: 'Ganti email', desc: 'Ubah alamat email akun', key: 'email' },
-                  { icon: Lock, label: 'Ganti password', desc: 'Ubah password secara berkala', key: 'password' },
+                  { icon: Lock, label: hasPassword ? 'Ganti password' : 'Buat password', desc: hasPassword ? 'Ubah password secara berkala' : 'Tambahin password biar bisa login pakai email', key: 'password' },
                 ].map(({ icon: Icon, label, desc, key }) => (
                   <button key={key} onClick={() => setModal(key)}
                     className="flex items-center gap-3 py-3 first:pt-0 last:pb-0 w-full text-left hover:opacity-70 transition-opacity">
