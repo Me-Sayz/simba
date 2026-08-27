@@ -66,8 +66,12 @@ export async function DELETE(req: NextRequest) {
 
     // ============ STAFF: cuma lepas diri sendiri dari toko ============
     // Data toko (produk, stok, transaksi) TETAP UTUH — itu milik toko, bukan milik staff ini.
+    // supabase_auth_admin gak bisa nyentuh public schema, jadi dibersihin manual di sini.
     if (membership && membership.role === 'staff') {
       await deleteAvatarIfAny(userId)
+      await supabaseAdmin.from('products').update({ user_id: null }).eq('user_id', userId)
+      await supabaseAdmin.from('stock_movements').update({ user_id: null }).eq('user_id', userId)
+      await supabaseAdmin.from('transactions').update({ user_id: null }).eq('user_id', userId)
       await supabaseAdmin.from('store_members').delete().eq('id', membership.id)
       await supabaseAdmin.from('profiles').delete().eq('id', userId)
 
@@ -109,8 +113,11 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ success: true })
     }
 
-    // ============ Fallback: user gak kegabung toko manapun (harusnya gak pernah kejadian) ============
+    // ============ Fallback: user gak kegabung toko manapun (misal store_members udah kehapus duluan) ============
     await deleteAvatarIfAny(userId)
+    await supabaseAdmin.from('products').update({ user_id: null }).eq('user_id', userId)
+    await supabaseAdmin.from('stock_movements').update({ user_id: null }).eq('user_id', userId)
+    await supabaseAdmin.from('transactions').update({ user_id: null }).eq('user_id', userId)
     await supabaseAdmin.from('profiles').delete().eq('id', userId)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId)
     if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })

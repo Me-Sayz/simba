@@ -91,8 +91,9 @@ export default function ProfilePage() {
     setEmail(user?.email || '')
     setJoinedAt(user?.created_at ? new Date(user.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-')
     setLastSign(user?.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-')
-    // user yang login via Google doang (belum pernah set password) gak punya identity 'email'
-    setHasPassword((user?.identities || []).some(i => i.provider === 'email'))
+    // cek beneran ke database (encrypted_password), bukan nebak dari identities
+    const { data: hp } = await supabase.rpc('has_password')
+    setHasPassword(!!hp)
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
     if (data) { setProfile(data); setAvatarPreview(data.avatar_url || null) }
     const ctx = await getStoreContext()

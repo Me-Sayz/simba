@@ -59,9 +59,16 @@ export async function DELETE(req: NextRequest) {
       } catch {}
     }
 
-    // Hapus akun auth-nya. store_members & profiles ikut kehapus otomatis (FK cascade).
-    // stock_movements/transactions/products yang pernah dia buat TETAP ADA (FK SET NULL),
-    // cuma kolom user_id-nya jadi kosong — riwayat toko gak ikut lenyap.
+    // supabase_auth_admin (role internal Supabase buat proses hapus akun) SENGAJA
+    // dibatasin cuma ke schema auth doang — dia gak bisa nyentuh tabel public kita,
+    // jadi FK cascade/SET NULL gak bisa diandelin buat proses ini. Beresin manual
+    // pakai service_role (akses penuh) SEBELUM manggil deleteUser.
+    await supabaseAdmin.from('products').update({ user_id: null }).eq('user_id', targetUserId)
+    await supabaseAdmin.from('stock_movements').update({ user_id: null }).eq('user_id', targetUserId)
+    await supabaseAdmin.from('transactions').update({ user_id: null }).eq('user_id', targetUserId)
+    await supabaseAdmin.from('store_members').delete().eq('id', targetMembership.id)
+    await supabaseAdmin.from('profiles').delete().eq('id', targetUserId)
+
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(targetUserId)
     if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
 

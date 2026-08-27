@@ -1,8 +1,13 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+
+const ERROR_MESSAGES = {
+  oauth_failed: 'Login Google gagal. Coba lagi ya.',
+  invalid_link: 'Link ini sudah tidak berlaku atau kadaluarsa. Minta link baru.',
+}
 
 /* Inventory Illustration SVG */
 function InventoryIllustration() {
@@ -70,15 +75,27 @@ function InventoryIllustration() {
 }
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  )
+}
+
+function LoginForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
-  const [error, setError] = useState('')
   const [mounted, setMounted] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const [error, setError] = useState(() => {
+    const errCode = searchParams.get('error')
+    return errCode ? (ERROR_MESSAGES[errCode] || 'Terjadi kesalahan, coba lagi.') : ''
+  })
 
   useEffect(() => { setMounted(true) }, [])
 
