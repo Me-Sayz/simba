@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { getStoreContext } from '@/lib/getUser'
-import { ShoppingCart, ChevronRight, Settings, HelpCircle, LogOut, BarChart3, Building2, User, Users } from 'lucide-react'
+import { ShoppingCart, ChevronRight, Settings, HelpCircle, LogOut, BarChart3, Building2, User, Users, QrCode } from 'lucide-react'
 
 export default function AkunPage() {
   const [profile, setProfile] = useState(null)
@@ -102,6 +102,18 @@ export default function AkunPage() {
             <span className="flex-1">
               <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Kelola Staff</span>
               <span className="block text-xs text-gray-400 mt-0.5">Undang &amp; kelola staff toko</span>
+            </span>
+            <ChevronRight size={18} className="text-gray-400 shrink-0" />
+          </Link>
+        )}
+        {isOwner && (
+          <Link href="/akun/qris" className="flex items-center gap-3.5 px-5 py-4 border-b border-gray-100 dark:border-gray-800">
+            <span className="w-11 h-11 rounded-[13px] bg-terong-soft flex items-center justify-center shrink-0">
+              <QrCode size={19} className="text-terong dark:text-terong-light" />
+            </span>
+            <span className="flex-1">
+              <span className="block text-sm font-semibold text-gray-800 dark:text-gray-100">Setup QRIS</span>
+              <span className="block text-xs text-gray-400 mt-0.5">Terima pembayaran QRIS toko sendiri</span>
             </span>
             <ChevronRight size={18} className="text-gray-400 shrink-0" />
           </Link>

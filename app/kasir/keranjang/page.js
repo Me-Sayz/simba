@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useCart } from '@/context/CartContext'
-import { ShoppingCart, X, Trash2 } from 'lucide-react'
+import { getStoreContext } from '@/lib/getUser'
+import QrisPayment from '@/components/QrisPayment'
+import { ShoppingCart, X, Trash2, Banknote, QrCode } from 'lucide-react'
 
 function fmt(n) {
   return 'Rp ' + (n || 0).toLocaleString('id-ID')
@@ -11,13 +13,15 @@ function fmt(n) {
 
 export default function KasirKeranjangPage() {
   const { cart, addToCart, removeFromCart, clearCart } = useCart()
-  const [products, setProducts] = useState({}) // { id: product }
+  const [products, setProducts] = useState({})
   const [fetching, setFetching] = useState(true)
   const [showPayModal, setShowPayModal] = useState(false)
+  const [paymentMethod, setPaymentMethod] = useState('cash')
   const [payment, setPayment] = useState('')
   const [loading, setLoading] = useState(false)
   const [toast, setToast] = useState(null)
-  const [confirmAction, setConfirmAction] = useState(null) // { type: 'single', id } | { type: 'all' }
+  const [confirmAction, setConfirmAction] = useState(null)
+  const [qrisStore, setQrisStore] = useState({ enabled: false, staticString: null })
   const router = useRouter()
 
   const cartIds = Object.keys(cart)
@@ -26,6 +30,22 @@ export default function KasirKeranjangPage() {
     if (cartIds.length === 0) { setProducts({}); setFetching(false); return }
     fetchProducts()
   }, [cartIds.join(',')])
+
+  useEffect(() => {
+    getStoreContext().then((ctx) => {
+      if (!ctx?.storeId) return
+      supabase
+        .from('stores')
+        .select('qris_enabled, qris_static_string')
+        .eq('id', ctx.storeId)
+        .single()
+        .then(({ data }) => {
+          if (data) {
+            setQrisStore({ enabled: !!data.qris_enabled && !!data.qris_static_string, staticString: data.qris_static_string })
+          }
+        })
+    })
+  }, [])
 
   async function fetchProducts() {
     setFetching(true)
@@ -43,7 +63,7 @@ export default function KasirKeranjangPage() {
 
   function handleDecrement(id, qty) {
     if (qty <= 1) {
-      setConfirmAction({ type: 'single', id }) // mau turun ke 0 -> minta konfirmasi hapus
+      setConfirmAction({ type: 'single', id })
     } else {
       removeFromCart(id, 1)
     }
@@ -66,11 +86,7 @@ export default function KasirKeranjangPage() {
     setConfirmAction(null)
   }
 
-  async function handleCheckout() {
-    if (paymentNum < total) {
-      setToast({ type: 'error', text: 'Pembayaran kurang dari total' })
-      return
-    }
+  async function handleCheckout(method, amount) {
     setLoading(true)
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -78,8 +94,9 @@ export default function KasirKeranjangPage() {
 
     const { error } = await supabase.rpc('checkout_transaction', {
       p_items: items,
-      p_payment_amount: paymentNum,
+      p_payment_amount: amount,
       p_user_id: user.id,
+      p_payment_method: method,
     })
 
     setLoading(false)
@@ -91,8 +108,26 @@ export default function KasirKeranjangPage() {
     clearCart()
     setShowPayModal(false)
     setPayment('')
+    setPaymentMethod('cash')
     setToast({ type: 'success', text: 'Transaksi berhasil!' })
     setTimeout(() => router.push('/kasir/riwayat'), 1200)
+  }
+
+  function handleCheckoutCash() {
+    if (paymentNum < total) {
+      setToast({ type: 'error', text: 'Pembayaran kurang dari total' })
+      return
+    }
+    handleCheckout('cash', paymentNum)
+  }
+
+  function handleCheckoutQris() {
+    handleCheckout('qris', total)
+  }
+
+  function openPayModal() {
+    setPaymentMethod('cash')
+    setShowPayModal(true)
   }
 
   return (
@@ -170,7 +205,7 @@ export default function KasirKeranjangPage() {
               <p className="font-bold text-2xl text-terong-deep dark:text-terong-light">{fmt(total)}</p>
             </div>
             <button
-              onClick={() => setShowPayModal(true)}
+              onClick={openPayModal}
               className="px-8 py-3.5 rounded-2xl bg-gradient-to-br from-terong to-terong-deep text-white font-bold text-sm shadow-lg shadow-terong/30"
             >
               Bayar Sekarang
@@ -179,7 +214,7 @@ export default function KasirKeranjangPage() {
         </>
       )}
 
-      {/* MODAL konfirmasi hapus (single item atau semua) */}
+      {/* MODAL konfirmasi hapus */}
       {confirmAction && (
         <div className="fixed inset-0 bg-black/40 z-[90] flex items-center justify-center px-4" onClick={() => setConfirmAction(null)}>
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-5 w-full max-w-sm" onClick={e => e.stopPropagation()}>
@@ -213,34 +248,67 @@ export default function KasirKeranjangPage() {
               </button>
             </div>
 
-            <div className="text-center mb-5">
-              <p className="text-xs text-gray-400">Total Belanja</p>
-              <p className="font-bold text-2xl text-terong-deep dark:text-terong-light">{fmt(total)}</p>
-            </div>
-
-            <label className="text-xs text-gray-500 mb-1 block">Jumlah Dibayar</label>
-            <input
-              type="number"
-              value={payment}
-              onChange={e => setPayment(e.target.value)}
-              placeholder="0"
-              autoFocus
-              className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-3 text-lg font-bold mb-3"
-            />
-
-            {paymentNum > 0 && (
-              <div className={`rounded-xl px-3.5 py-2.5 mb-4 text-sm font-semibold ${change >= 0 ? 'bg-daun-soft text-daun dark:text-daun-light' : 'bg-merah-soft text-merah-c dark:text-merah-light'}`}>
-                {change >= 0 ? `Kembalian: ${fmt(change)}` : `Kurang: ${fmt(Math.abs(change))}`}
+            {qrisStore.enabled && (
+              <div className="flex gap-2 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 mb-5">
+                <button
+                  onClick={() => setPaymentMethod('cash')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                    paymentMethod === 'cash' ? 'bg-white dark:bg-gray-900 text-terong-deep dark:text-terong-light shadow-sm' : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  <Banknote size={15} /> Tunai
+                </button>
+                <button
+                  onClick={() => setPaymentMethod('qris')}
+                  className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                    paymentMethod === 'qris' ? 'bg-white dark:bg-gray-900 text-terong-deep dark:text-terong-light shadow-sm' : 'text-gray-500 dark:text-gray-400'
+                  }`}
+                >
+                  <QrCode size={15} /> QRIS
+                </button>
               </div>
             )}
 
-            <button
-              onClick={handleCheckout}
-              disabled={loading || paymentNum < total}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-br from-terong to-terong-deep text-white font-bold text-sm disabled:opacity-40"
-            >
-              {loading ? 'Memproses...' : 'Konfirmasi Bayar'}
-            </button>
+            {paymentMethod === 'qris' ? (
+              <QrisPayment
+                amount={total}
+                staticString={qrisStore.staticString}
+                confirming={loading}
+                onConfirm={handleCheckoutQris}
+                onCancel={() => setShowPayModal(false)}
+              />
+            ) : (
+              <>
+                <div className="text-center mb-5">
+                  <p className="text-xs text-gray-400">Total Belanja</p>
+                  <p className="font-bold text-2xl text-terong-deep dark:text-terong-light">{fmt(total)}</p>
+                </div>
+
+                <label className="text-xs text-gray-500 mb-1 block">Jumlah Dibayar</label>
+                <input
+                  type="number"
+                  value={payment}
+                  onChange={e => setPayment(e.target.value)}
+                  placeholder="0"
+                  autoFocus
+                  className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3.5 py-3 text-lg font-bold mb-3"
+                />
+
+                {paymentNum > 0 && (
+                  <div className={`rounded-xl px-3.5 py-2.5 mb-4 text-sm font-semibold ${change >= 0 ? 'bg-daun-soft text-daun dark:text-daun-light' : 'bg-merah-soft text-merah-c dark:text-merah-light'}`}>
+                    {change >= 0 ? `Kembalian: ${fmt(change)}` : `Kurang: ${fmt(Math.abs(change))}`}
+                  </div>
+                )}
+
+                <button
+                  onClick={handleCheckoutCash}
+                  disabled={loading || paymentNum < total}
+                  className="w-full py-3.5 rounded-2xl bg-gradient-to-br from-terong to-terong-deep text-white font-bold text-sm disabled:opacity-40"
+                >
+                  {loading ? 'Memproses...' : 'Konfirmasi Bayar'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
-import { History, Receipt, ChevronRight, Wallet } from 'lucide-react'
+import { History, Receipt, ChevronRight, Wallet, Banknote, QrCode } from 'lucide-react'
 
 function fmtRupiah(n) {
   return 'Rp ' + (n || 0).toLocaleString('id-ID')
@@ -11,6 +11,18 @@ function fmtDateTime(str) {
   const d = new Date(str)
   return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) + ' • ' +
     d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+}
+
+function PaymentBadge({ method }) {
+  const isQris = method === 'qris'
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+      isQris ? 'bg-terong-soft text-terong-deep dark:text-terong-light' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+    }`}>
+      {isQris ? <QrCode size={11} /> : <Banknote size={11} />}
+      {isQris ? 'QRIS' : 'Tunai'}
+    </span>
+  )
 }
 
 export default function RiwayatPage() {
@@ -87,7 +99,10 @@ export default function RiwayatPage() {
               </div>
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">#{t.transaction_code}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{fmtDateTime(t.created_at)}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-xs text-gray-400">{fmtDateTime(t.created_at)}</p>
+                  <PaymentBadge method={t.payment_method} />
+                </div>
               </div>
               <span className="text-base font-bold text-daun shrink-0">{fmtRupiah(t.total_amount)}</span>
               <ChevronRight size={18} className="text-gray-300 shrink-0" />
@@ -101,7 +116,10 @@ export default function RiwayatPage() {
         <div className="fixed inset-0 bg-black/40 z-[90] flex items-end md:items-center justify-center" onClick={() => setSelected(null)}>
           <div className="bg-white dark:bg-gray-900 w-full md:max-w-sm rounded-t-[24px] md:rounded-[24px] p-5 max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
             <p className="font-bold text-sm mb-1">#{selected.transaction_code}</p>
-            <p className="text-xs text-gray-400 mb-4">{fmtDateTime(selected.created_at)}</p>
+            <div className="flex items-center gap-2 mb-4">
+              <p className="text-xs text-gray-400">{fmtDateTime(selected.created_at)}</p>
+              <PaymentBadge method={selected.payment_method} />
+            </div>
 
             <div className="flex flex-col gap-2.5 mb-4 border-t border-dashed border-gray-200 dark:border-gray-700 pt-4">
               {items.map(it => (
@@ -115,7 +133,9 @@ export default function RiwayatPage() {
             <div className="border-t border-dashed border-gray-200 dark:border-gray-700 pt-3 flex flex-col gap-1.5 text-sm mb-4">
               <div className="flex justify-between"><span className="text-gray-400">Total</span><span className="font-bold">{fmtRupiah(selected.total_amount)}</span></div>
               <div className="flex justify-between"><span className="text-gray-400">Dibayar</span><span>{fmtRupiah(selected.payment_amount)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-400">Kembalian</span><span>{fmtRupiah(selected.change_amount)}</span></div>
+              {selected.payment_method !== 'qris' && (
+                <div className="flex justify-between"><span className="text-gray-400">Kembalian</span><span>{fmtRupiah(selected.change_amount)}</span></div>
+              )}
             </div>
 
             <button onClick={() => setSelected(null)} className="w-full py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 text-sm font-semibold">
