@@ -1,11 +1,20 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 
-export default function ResetPasswordPage() {
+export default function ResetPasswordPageWrapper() {
+  return (
+    <Suspense fallback={null}>
+      <ResetPasswordPage />
+    </Suspense>
+  )
+}
+
+function ResetPasswordPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -14,8 +23,60 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [verifyState, setVerifyState] = useState('checking') // 'checking' | 'ready' | 'invalid'
 
   useEffect(() => { setMounted(true) }, [])
+
+  useEffect(() => {
+    let settled = false
+
+    // Jalur 1: link lupa password (diteruskan dari /auth/confirm) — ada
+    // token_hash & type di query string. Verifikasi DI SINI, bukan percaya
+    // sesi yang kebetulan lagi aktif.
+    const token_hash = searchParams.get('token_hash')
+    const type = searchParams.get('type')
+
+    if (token_hash && type) {
+      supabase.auth.verifyOtp({ token_hash, type }).then(({ error }) => {
+        settled = true
+        setVerifyState(error ? 'invalid' : 'ready')
+      })
+      return
+    }
+
+    // Jalur 2: link undangan staff — token dikirim lewat hash fragment URL
+    // (bukan query string), diproses otomatis sama supabase-js pas halaman
+    // dimuat. Kalau hash-nya emang ada waktu halaman pertama kali dibuka,
+    // tunggu event SIGNED_IN/PASSWORD_RECOVERY sebagai bukti sesi baru.
+    const hadHashToken = typeof window !== 'undefined' && window.location.hash.includes('access_token')
+
+    if (!hadHashToken) {
+      // Gak ada token sama sekali di URL — TOLAK, jangan pernah percaya sesi
+      // lama yang kebetulan lagi aktif di browser.
+      Promise.resolve().then(() => setVerifyState('invalid'))
+      return
+    }
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (settled) return
+      if (event === 'SIGNED_IN' || event === 'PASSWORD_RECOVERY') {
+        settled = true
+        setVerifyState('ready')
+      }
+    })
+
+    const timeout = setTimeout(() => {
+      if (!settled) {
+        settled = true
+        setVerifyState('invalid')
+      }
+    }, 4000)
+
+    return () => {
+      listener?.subscription?.unsubscribe()
+      clearTimeout(timeout)
+    }
+  }, [searchParams])
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -33,6 +94,8 @@ export default function ResetPasswordPage() {
       await supabase.rpc('accept_invite')
       setSuccess(true)
       setLoading(false)
+      // sign-out paksa sesi recovery ini — jaga-jaga device dipake bareng
+      await supabase.auth.signOut()
       setTimeout(() => router.push('/login'), 3000)
     }
   }
@@ -377,7 +440,31 @@ export default function ResetPasswordPage() {
             <div className="rp-logo-divider" />
           </div>
 
-          {!success ? (
+          {verifyState === 'checking' ? (
+            <div className="success-card">
+              <div className="spinner" style={{ margin: '0 auto 20px', width: 32, height: 32, borderWidth: 3, borderTopColor: '#2563eb', borderColor: 'rgba(37,99,235,0.15)' }} />
+              <p className="success-desc">Memverifikasi link...</p>
+            </div>
+          ) : verifyState === 'invalid' ? (
+            <div className="success-card">
+              <div className="success-icon-wrap" style={{ background: 'linear-gradient(135deg, #fee2e2, #fecaca)', boxShadow: '0 4px 16px rgba(239,68,68,0.20)' }}>
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              </div>
+              <h2 className="success-title">Link Tidak Valid</h2>
+              <p className="success-desc">
+                Link ini sudah kadaluarsa, sudah pernah dipakai, atau tidak valid.<br />
+                Silakan minta link baru.
+              </p>
+              <Link href="/forgot-password" className="btn-back">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                <span>Minta Link <span className="accent">Baru</span></span>
+              </Link>
+            </div>
+          ) : !success ? (
             <>
               {/* Title */}
               <div className="rp-title-section">

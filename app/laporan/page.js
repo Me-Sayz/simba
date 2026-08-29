@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { getStoreContext } from '@/lib/getUser'
+import { extractReason } from '@/lib/stockReason'
 import AccessDenied from '@/components/AccessDenied'
 import { FileDown, TrendingUp, TrendingDown, Package, ArrowDownCircle, ArrowUpCircle, DollarSign, ChevronDown, Check } from 'lucide-react'
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts'
@@ -59,7 +60,9 @@ export default function LaporanPage() {
   const [txFilter, setTxFilter] = useState('all')
   const [txPage, setTxPage] = useState(1)
   const [exporting, setExporting] = useState(false)
+  const [exportMenuOpen, setExportMenuOpen] = useState(false)
   const presetRef = useRef(null)
+  const exportRef = useRef(null)
   const reportRef = useRef(null)
   const [access, setAccess] = useState('checking') // 'checking' | 'granted' | 'denied'
 
@@ -70,6 +73,7 @@ export default function LaporanPage() {
   useEffect(() => {
     function handleClick(e) {
       if (presetRef.current && !presetRef.current.contains(e.target)) setPresetOpen(false)
+      if (exportRef.current && !exportRef.current.contains(e.target)) setExportMenuOpen(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
@@ -142,7 +146,7 @@ export default function LaporanPage() {
   const reasonSummary = (() => {
     const map = {}
     stockOut.forEach(o => {
-      const r = o.note || 'Lainnya'
+      const r = extractReason(o.note)
       if (!map[r]) map[r] = { qty: 0, value: 0 }
       map[r].qty += o.quantity
       map[r].value += o.quantity * o.unit_price
@@ -184,6 +188,7 @@ export default function LaporanPage() {
   }
 
   async function handleExportPDF() {
+    setExportMenuOpen(false)
     setExporting(true)
     try {
       const { exportLaporanPDF } = await import('@/lib/exportPDF')
@@ -194,6 +199,18 @@ export default function LaporanPage() {
         products, stockIn, stockOut, dateFrom, dateTo, preset,
         chartLineImg: lineCanvas.toDataURL('image/png'),
       })
+    } catch (err) {
+      console.error(err)
+    }
+    setExporting(false)
+  }
+
+  async function handleExportExcel() {
+    setExportMenuOpen(false)
+    setExporting(true)
+    try {
+      const { exportLaporanExcel } = await import('@/lib/exportExcel')
+      await exportLaporanExcel({ products, stockIn, stockOut, dateFrom, dateTo })
     } catch (err) {
       console.error(err)
     }
@@ -262,13 +279,31 @@ export default function LaporanPage() {
               </div>
             )}
 
-            <button
-              onClick={handleExportPDF}
-              disabled={exporting}
-              className="flex items-center gap-2 bg-terong text-white text-sm px-4 py-2 rounded-xl hover:opacity-90 font-medium disabled:opacity-60 shadow-sm active:scale-95 transition-all"
-            >
-              <FileDown size={15} /> {exporting ? 'Exporting...' : 'Export PDF'}
-            </button>
+            <div className="relative" ref={exportRef}>
+              <button
+                onClick={() => setExportMenuOpen(v => !v)}
+                disabled={exporting}
+                className="flex items-center gap-2 bg-terong text-white text-sm px-4 py-2 rounded-xl hover:opacity-90 font-medium disabled:opacity-60 shadow-sm active:scale-95 transition-all"
+              >
+                <FileDown size={15} /> {exporting ? 'Exporting...' : 'Export'}
+                <ChevronDown size={14} className={`transition-transform duration-200 ${exportMenuOpen ? 'rotate-180' : ''}`} />
+              </button>
+              <div className={`absolute right-0 mt-2 w-44 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl shadow-lg z-20 overflow-hidden origin-top-right transition-all duration-150
+                ${exportMenuOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'}`}>
+                <button
+                  onClick={handleExportPDF}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 text-left"
+                >
+                  <FileDown size={14} /> Export PDF
+                </button>
+                <button
+                  onClick={handleExportExcel}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 text-left border-t border-gray-100 dark:border-gray-800"
+                >
+                  <FileDown size={14} /> Export Excel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 

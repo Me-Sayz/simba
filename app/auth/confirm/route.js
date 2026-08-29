@@ -1,35 +1,19 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
-import { cookies } from 'next/headers'
 
+// SENGAJA cuma nerusin token_hash & type ke /auth/reset-password, gak
+// verifikasi di sini lagi. Verifikasi dipindah ke halaman reset-password
+// sendiri, biar halaman itu punya bukti token valid yang jelas — bukan cuma
+// percaya sesi yang kebetulan lagi aktif di browser.
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url)
   const token_hash = searchParams.get('token_hash')
   const type = searchParams.get('type')
 
   if (token_hash && type) {
-    const cookieStore = await cookies()
-
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          getAll: () => cookieStore.getAll(),
-          setAll: (cookiesToSet) => {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          },
-        },
-      }
-    )
-
-    const { error } = await supabase.auth.verifyOtp({ type, token_hash })
-
-    if (!error) {
-      return NextResponse.redirect(`${origin}/auth/reset-password`)
-    }
+    const target = new URL('/auth/reset-password', origin)
+    target.searchParams.set('token_hash', token_hash)
+    target.searchParams.set('type', type)
+    return NextResponse.redirect(target)
   }
 
   return NextResponse.redirect(`${origin}/login?error=invalid_link`)
