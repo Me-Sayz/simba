@@ -105,8 +105,9 @@ export default function StockMovementsTab() {
   const [loading, setLoading] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [toast, setToast] = useState(null)
+  const [isOwner, setIsOwner] = useState(false)
 
-  useEffect(() => { fetchProducts(); fetchHistory() }, [])
+  useEffect(() => { fetchProducts(); fetchHistory(); getStoreContext().then(ctx => setIsOwner(!!ctx?.isOwner)) }, [])
 
   async function fetchProducts() {
     const { data } = await supabase.from('products').select('id, name, unit, price, stock').order('name')
@@ -290,10 +291,14 @@ export default function StockMovementsTab() {
               <span className={`text-xs font-bold shrink-0 ${row.type === 'in' ? 'text-daun' : 'text-merah-c'}`}>
                 {row.type === 'in' ? '+' : '-'}{row.quantity}
               </span>
-              <button onClick={() => openEditModal(row)} className="text-[11px] text-terong dark:text-terong-light font-semibold shrink-0">Edit</button>
-              <button onClick={() => setDeleteTarget(row)} className="text-gray-300 hover:text-merah-c shrink-0">
-                <Trash2 size={15} />
-              </button>
+              {isOwner && !row.transaction_id && (
+                <>
+                  <button onClick={() => openEditModal(row)} className="text-[11px] text-terong dark:text-terong-light font-semibold shrink-0">Edit</button>
+                  <button onClick={() => setDeleteTarget(row)} className="text-gray-300 hover:text-merah-c shrink-0">
+                    <Trash2 size={15} />
+                  </button>
+                </>
+              )}
             </div>
           ))
         )}

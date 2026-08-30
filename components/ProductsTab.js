@@ -921,6 +921,9 @@ export default function ProductsTab() {
           </div>
         )}
 
+        {/* spacer biar pagination gak ketutup tombol tambah floating pas discroll abis-abisan */}
+        <div className="h-16 md:hidden" aria-hidden="true" />
+
         <button
           onClick={() => { setEditProduct(null); setShowForm(true) }}
           className="md:hidden fixed bottom-24 right-6 w-14 h-14 bg-terong text-white rounded-full shadow-lg flex items-center justify-center hover:opacity-90 z-40"
