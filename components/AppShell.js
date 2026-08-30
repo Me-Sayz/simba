@@ -51,7 +51,11 @@ export default function AppShell() {
 
   const isKasir = isKasirPath || (isSharedPath && lastMode === 'kasir')
 
-  return isKasir
-    ? <KasirNav profile={profile} />
-    : <MonitoringNav profile={profile} lowStock={lowStock} />
+  return (
+    <div key={isKasir ? 'kasir' : 'monitoring'} className="animate-nav-fade">
+      {isKasir
+        ? <KasirNav profile={profile} />
+        : <MonitoringNav profile={profile} lowStock={lowStock} />}
+    </div>
+  )
 }

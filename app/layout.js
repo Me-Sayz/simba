@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 import AppShell from "@/components/AppShell"
+import SplashScreenLoader from "@/components/SplashScreenLoader"
 import { CartProvider } from "@/context/CartContext"
 import { ThemeProvider } from "next-themes"
 
@@ -14,6 +15,7 @@ export default function RootLayout({ children }) {
     <html lang="id" suppressHydrationWarning>
       <body suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem={true} disableTransitionOnChange>
+          <SplashScreenLoader />
           <CartProvider>
             <AppShell />
             <div id="main-content" className="md:ml-60 pb-20 md:pb-6 transition-all duration-300 min-h-screen bg-gray-100 dark:bg-gray-950">

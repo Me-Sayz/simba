@@ -99,7 +99,7 @@ export default function KelolaStaffPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 pb-10">
-      <div className="px-4 md:px-6 py-6 max-w-2xl mx-auto">
+      <div className="px-4 md:px-6 py-6 max-w-7xl mx-auto">
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">

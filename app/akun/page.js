@@ -6,16 +6,42 @@ import { supabase } from '@/lib/supabase'
 import { getStoreContext } from '@/lib/getUser'
 import { ShoppingCart, ChevronRight, Settings, HelpCircle, LogOut, BarChart3, Building2, User, Users, QrCode } from 'lucide-react'
 
+function AkunSkeleton() {
+  return (
+    <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8 animate-pulse">
+      <div className="flex flex-col items-center text-center pt-2 pb-5">
+        <div className="w-24 h-24 rounded-full bg-gray-200 dark:bg-gray-800" />
+        <div className="h-5 w-32 bg-gray-200 dark:bg-gray-800 rounded mt-3" />
+        <div className="h-3 w-24 bg-gray-200 dark:bg-gray-800 rounded mt-2" />
+        <div className="h-3 w-40 bg-gray-200 dark:bg-gray-800 rounded mt-2" />
+      </div>
+
+      <div className="h-[74px] rounded-[20px] bg-gray-200 dark:bg-gray-800 mb-4" />
+
+      <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-[18px] overflow-hidden mb-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className={`flex items-center gap-3.5 px-5 py-4 ${i !== 3 ? 'border-b border-gray-100 dark:border-gray-800' : ''}`}>
+            <div className="w-11 h-11 rounded-[13px] bg-gray-200 dark:bg-gray-800 shrink-0" />
+            <div className="flex-1">
+              <div className="h-3.5 w-28 bg-gray-200 dark:bg-gray-800 rounded" />
+              <div className="h-3 w-40 bg-gray-200 dark:bg-gray-800 rounded mt-2" />
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="h-[68px] rounded-[18px] bg-gray-200 dark:bg-gray-800" />
+    </div>
+  )
+}
+
 export default function AkunPage() {
   const [profile, setProfile] = useState(null)
   const [email, setEmail] = useState('')
   const [isOwner, setIsOwner] = useState(false)
   const [storeName, setStoreName] = useState(null)
+  const [loading, setLoading] = useState(true)
   const router = useRouter()
-
-  useEffect(() => {
-    fetchData()
-  }, [])
 
   async function fetchData() {
     const { data: { user } } = await supabase.auth.getUser()
@@ -26,7 +52,12 @@ export default function AkunPage() {
     const ctx = await getStoreContext()
     setIsOwner(ctx?.isOwner ?? false)
     setStoreName(ctx?.storeName ?? null)
+    setLoading(false)
   }
+
+  useEffect(() => {
+    Promise.resolve().then(() => fetchData())
+  }, [])
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -34,6 +65,8 @@ export default function AkunPage() {
   }
 
   const initial = profile?.name?.[0]?.toUpperCase() || 'U'
+
+  if (loading) return <AkunSkeleton />
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">

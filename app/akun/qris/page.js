@@ -2,11 +2,43 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { Html5Qrcode } from 'html5-qrcode'
+import QRCodeStyling from 'qr-code-styling'
 import { supabase } from '@/lib/supabase'
 import { getStoreContext } from '@/lib/getUser'
 import { validateStaticQris, parseStaticQrisInfo } from '@/lib/qris'
 import AccessDenied from '@/components/AccessDenied'
 import { ChevronLeft, QrCode, Upload, CheckCircle2, AlertTriangle, Loader2, RefreshCw } from 'lucide-react'
+
+function QrisPreview({ data }) {
+  const containerRef = useRef(null)
+  const [size, setSize] = useState(200)
+
+  useEffect(() => {
+    const mq = window.matchMedia('(min-width: 768px)')
+    const updateSize = () => setSize(mq.matches ? 260 : 200)
+    updateSize()
+    mq.addEventListener('change', updateSize)
+    return () => mq.removeEventListener('change', updateSize)
+  }, [])
+
+  useEffect(() => {
+    if (!data || !containerRef.current) return
+    containerRef.current.innerHTML = ''
+    const instance = new QRCodeStyling({
+      width: size,
+      height: size,
+      type: 'svg',
+      data,
+      margin: 6,
+      qrOptions: { errorCorrectionLevel: 'M' },
+      dotsOptions: { color: '#1f2937', type: 'square' },
+      backgroundOptions: { color: '#ffffff' },
+    })
+    instance.append(containerRef.current)
+  }, [data, size])
+
+  return <div ref={containerRef} className="shrink-0" style={{ width: size, height: size }} />
+}
 
 function Toggle({ checked, onChange, disabled }) {
   return (
@@ -36,9 +68,10 @@ export default function SetupQrisPage() {
   const [toast, setToast] = useState(null)
 
   const [qrisEnabled, setQrisEnabled] = useState(false)
-  const [savedString, setSavedString] = useState(null)
-  const [savedInfo, setSavedInfo] = useState(null)
+  const [savedString, setSavedString] = useState(null) // string yang udah tersimpan di DB
+  const [savedInfo, setSavedInfo] = useState(null) // { merchantName, merchantCity }
 
+  // hasil decode yang BELUM disimpan — nunggu Owner konfirmasi di preview
   const [pendingString, setPendingString] = useState(null)
   const [pendingInfo, setPendingInfo] = useState(null)
   const [decodeError, setDecodeError] = useState(null)
@@ -88,7 +121,7 @@ export default function SetupQrisPage() {
 
   async function handleFileSelected(e) {
     const file = e.target.files?.[0]
-    e.target.value = ''
+    e.target.value = '' // biar bisa pilih file yang sama lagi kalau mau re-upload
     if (!file) return
 
     setDecodeError(null)
@@ -148,14 +181,14 @@ export default function SetupQrisPage() {
       setToast({ type: 'error', text: 'Setup QRIS dulu sebelum diaktifkan' })
       return
     }
-    setQrisEnabled(next)
+    setQrisEnabled(next) // optimistic
     const { error } = await supabase
       .from('stores')
       .update({ qris_enabled: next })
       .eq('id', storeId)
 
     if (error) {
-      setQrisEnabled(!next)
+      setQrisEnabled(!next) // revert kalau gagal
       setToast({ type: 'error', text: 'Gagal mengubah status QRIS: ' + error.message })
     }
   }
@@ -165,8 +198,9 @@ export default function SetupQrisPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 pb-10">
-      <div className="px-4 md:px-6 py-6 max-w-2xl mx-auto">
+      <div className="px-4 md:px-6 py-6 max-w-7xl mx-auto">
 
+        {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <Link href="/akun" className="p-2 -ml-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-500">
             <ChevronLeft size={20} />
@@ -177,6 +211,7 @@ export default function SetupQrisPage() {
           </div>
         </div>
 
+        {/* Toggle aktifkan */}
         <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 mb-5 flex items-center justify-between gap-4">
           <div className="min-w-0">
             <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">Terima Pembayaran QRIS</p>
@@ -195,30 +230,31 @@ export default function SetupQrisPage() {
           </div>
         ) : (
           <>
+            {/* QRIS statis sudah tersimpan */}
             {savedString && !pendingString && (
-              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 mb-5">
-                <div className="flex items-start gap-3">
-                  <span className="w-11 h-11 rounded-[13px] bg-daun-soft flex items-center justify-center shrink-0">
-                    <CheckCircle2 size={19} className="text-daun dark:text-daun-light" />
-                  </span>
-                  <div className="min-w-0 flex-1">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-6 mb-5">
+                <div className="flex flex-col items-center text-center">
+                  <QrisPreview data={savedString} />
+                  <div className="flex items-center gap-2 mt-5">
+                    <CheckCircle2 size={16} className="text-daun dark:text-daun-light shrink-0" />
                     <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">QRIS toko sudah di-setup</p>
-                    {savedInfo?.merchantName && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                        {savedInfo.merchantName}{savedInfo.merchantCity ? ` · ${savedInfo.merchantCity}` : ''}
-                      </p>
-                    )}
                   </div>
+                  {savedInfo?.merchantName && (
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      {savedInfo.merchantName}{savedInfo.merchantCity ? ` · ${savedInfo.merchantCity}` : ''}
+                    </p>
+                  )}
+                  <button
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-5 inline-flex items-center gap-1.5 text-xs font-semibold text-terong dark:text-terong-light hover:underline"
+                  >
+                    <RefreshCw size={13} /> Ganti QRIS
+                  </button>
                 </div>
-                <button
-                  onClick={() => fileInputRef.current?.click()}
-                  className="mt-4 w-full flex items-center justify-center gap-2 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 text-sm font-medium px-4 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                >
-                  <RefreshCw size={15} /> Ganti QRIS
-                </button>
               </div>
             )}
 
+            {/* Preview hasil decode — nunggu konfirmasi Owner sebelum disimpan */}
             {pendingString && (
               <div className="bg-white dark:bg-gray-900 rounded-2xl border-2 border-terong p-5 mb-5">
                 <div className="flex items-start gap-3 mb-4">
@@ -253,6 +289,7 @@ export default function SetupQrisPage() {
               </div>
             )}
 
+            {/* Upload zone — cuma tampil kalau belum ada saved string, atau lagi proses decode/error */}
             {(!savedString || decodeError) && !pendingString && (
               <div className="bg-white dark:bg-gray-900 rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 p-6 text-center">
                 <div className="w-12 h-12 rounded-2xl bg-terong-soft flex items-center justify-center mx-auto mb-3">
@@ -295,10 +332,12 @@ export default function SetupQrisPage() {
               onChange={handleFileSelected}
               className="hidden"
             />
+            {/* elemen tersembunyi wajib ada di DOM buat Html5Qrcode.scanFile, gak perlu keliatan */}
             <div id={scanElementId} className="hidden" />
           </>
         )}
 
+        {/* Toast */}
         {toast && (
           <div
             className={`fixed bottom-6 left-1/2 -translate-x-1/2 px-4 py-2.5 rounded-xl text-sm font-medium shadow-lg z-50 ${

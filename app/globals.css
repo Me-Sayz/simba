@@ -110,3 +110,12 @@ select option {
   object-fit: contain;
   mix-blend-mode: multiply;  /* ← sama */
 }
+
+/* Animasi cross-fade pas nav ganti mode (Kasir <-> Monitoring) */
+@keyframes navFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-nav-fade {
+  animation: navFadeIn 0.25s ease-out;
+}

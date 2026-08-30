@@ -50,6 +50,7 @@ export default function SettingsPage() {
   const [defaultMinStock, setDefaultMinStock] = useState(5)
   const [useDefaults, setUseDefaults] = useState(false)
   const [isOwner, setIsOwner] = useState(false)
+  const [ownerChecked, setOwnerChecked] = useState(false)
   const [notifs, setNotifs] = useState({
     notifLowStock: true,
     notifNewProduct: true,
@@ -68,7 +69,7 @@ export default function SettingsPage() {
       setUseDefaults(prefs.useDefaults || false)
       if (prefs.notifs) setNotifs(prefs.notifs)
     }
-    getStoreContext().then(ctx => setIsOwner(ctx?.isOwner ?? false))
+    getStoreContext().then(ctx => { setIsOwner(ctx?.isOwner ?? false); setOwnerChecked(true) })
   }, [])
 
   function savePrefs(updates) {
@@ -108,7 +109,7 @@ export default function SettingsPage() {
     }
   }
 
-  if (!mounted) return null
+  if (!mounted || !ownerChecked) return null
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950">

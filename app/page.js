@@ -43,6 +43,44 @@ function getPeriodRange(period) {
   return { start, end: now }
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 pb-6 animate-pulse">
+      <div className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4 flex items-center justify-between gap-3">
+        <div>
+          <div className="h-5 w-48 bg-gray-200 dark:bg-gray-800 rounded" />
+          <div className="h-3 w-56 bg-gray-200 dark:bg-gray-800 rounded mt-2.5" />
+        </div>
+      </div>
+      <div className="px-4 md:px-6 py-6 max-w-7xl mx-auto">
+        <div className="h-10 w-64 bg-terong-soft rounded-2xl mb-5" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="lg:col-span-2 flex flex-col gap-5">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-4 md:p-5">
+                  <div className="w-9 h-9 rounded-xl bg-gray-200 dark:bg-gray-800 mb-2.5" />
+                  <div className="h-3 w-14 bg-gray-200 dark:bg-gray-800 rounded" />
+                  <div className="h-4 w-16 bg-gray-200 dark:bg-gray-800 rounded mt-2" />
+                </div>
+              ))}
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 h-[220px]" />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-gray-200 dark:bg-gray-800 h-[92px]" />
+              <div className="rounded-2xl bg-gray-200 dark:bg-gray-800 h-[92px]" />
+            </div>
+          </div>
+          <div className="flex flex-col gap-5">
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 h-[180px]" />
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5 h-[160px]" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Dashboard() {
   const [profile, setProfile] = useState(null)
   const [period, setPeriod] = useState('today')
@@ -137,6 +175,8 @@ export default function Dashboard() {
 
   const omzet = transactions.reduce((s, t) => s + t.total_amount, 0)
   const jumlahTransaksi = transactions.length
+
+  if (loading) return <DashboardSkeleton />
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 pb-6">
