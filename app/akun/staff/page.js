@@ -5,7 +5,25 @@ import { supabase } from '@/lib/supabase'
 import { getStoreContext } from '@/lib/getUser'
 import AccessDenied from '@/components/AccessDenied'
 import { inputCls, FieldError } from '@/lib/formHelpers'
-import { ChevronLeft, UserPlus, Trash2, Mail, Clock, ShieldCheck } from 'lucide-react'
+import { ChevronLeft, UserPlus, Trash2, Mail, Clock, ShieldCheck, X, Calendar, LogIn } from 'lucide-react'
+
+function fmtDateTime(str) {
+  if (!str) return 'Belum pernah login'
+  return new Date(str).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) +
+    ' · ' + new Date(str).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
+}
+
+function RoleBadge({ role }) {
+  const isOwner = role === 'owner'
+  return (
+    <span className={`inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+      isOwner ? 'bg-terong-soft text-terong-deep dark:text-terong-light' : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400'
+    }`}>
+      {isOwner ? <ShieldCheck size={11} /> : <Mail size={11} />}
+      {isOwner ? 'Owner' : 'Staff'}
+    </span>
+  )
+}
 
 export default function KelolaStaffPage() {
   const [access, setAccess] = useState('checking') // 'checking' | 'granted' | 'denied'
@@ -16,6 +34,7 @@ export default function KelolaStaffPage() {
   const [error, setError] = useState('')
   const [toast, setToast] = useState(null)
   const [removeTarget, setRemoveTarget] = useState(null)
+  const [detailTarget, setDetailTarget] = useState(null)
 
   useEffect(() => {
     getStoreContext().then(ctx => {
@@ -26,6 +45,7 @@ export default function KelolaStaffPage() {
         setAccess('denied')
       }
     })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -40,8 +60,22 @@ export default function KelolaStaffPage() {
       .from('store_members')
       .select('id, role, status, user_id, created_at, profiles ( name )')
       .order('created_at', { ascending: true })
-    setMembers(data || [])
+    const list = data || []
+    setMembers(list)
     setLoading(false)
+    fetchDetails()
+  }
+
+  async function fetchDetails() {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/staff-detail', {
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+    })
+    if (!res.ok) return
+    const result = await res.json()
+    const detailMap = {}
+    ;(result.members || []).forEach(d => { detailMap[d.user_id] = d })
+    setMembers(prev => prev.map(m => ({ ...m, ...detailMap[m.user_id] })))
   }
 
   async function handleInvite(e) {
@@ -147,7 +181,11 @@ export default function KelolaStaffPage() {
             <div className="p-5 text-sm text-gray-400 text-center">Belum ada staff</div>
           ) : (
             members.map(m => (
-              <div key={m.id} className="flex items-center gap-3 px-5 py-4">
+              <div
+                key={m.id}
+                onClick={() => setDetailTarget(m)}
+                className="w-full flex items-center gap-3 px-5 py-4 text-left hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-colors cursor-pointer"
+              >
                 <span className="w-10 h-10 rounded-full bg-terong-soft flex items-center justify-center shrink-0">
                   {m.role === 'owner' ? (
                     <ShieldCheck size={17} className="text-terong dark:text-terong-light" />
@@ -156,21 +194,24 @@ export default function KelolaStaffPage() {
                   )}
                 </span>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
-                    {m.profiles?.name || (m.role === 'owner' ? 'Anda (Owner)' : 'Staff')}
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+                      {m.profiles?.name || (m.role === 'owner' ? 'Anda (Owner)' : 'Staff')}
+                    </p>
+                    <RoleBadge role={m.role} />
+                  </div>
+                  <p className="text-xs text-gray-400 truncate mt-0.5">
+                    {m.email || 'Memuat email...'}
                   </p>
-                  <p className="text-xs text-gray-400 flex items-center gap-1">
-                    {m.role === 'owner' ? 'Owner' : 'Staff'}
-                    {m.status === 'invited' && (
-                      <span className="inline-flex items-center gap-1 text-amber-c">
-                        <Clock size={11} /> Menunggu diterima
-                      </span>
-                    )}
-                  </p>
+                  {m.status === 'invited' && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-amber-c mt-0.5">
+                      <Clock size={11} /> Menunggu diterima
+                    </span>
+                  )}
                 </div>
                 {m.role === 'staff' && (
                   <button
-                    onClick={() => setRemoveTarget(m)}
+                    onClick={(e) => { e.stopPropagation(); setRemoveTarget(m) }}
                     className="p-2 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-gray-400 hover:text-rose-500 transition-colors shrink-0"
                   >
                     <Trash2 size={15} />
@@ -181,6 +222,63 @@ export default function KelolaStaffPage() {
           )}
         </div>
       </div>
+
+      {/* Detail staff */}
+      {detailTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 px-4" onClick={() => setDetailTarget(null)}>
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 max-w-sm w-full" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <span className="w-12 h-12 rounded-full bg-terong-soft flex items-center justify-center shrink-0">
+                  {detailTarget.role === 'owner' ? (
+                    <ShieldCheck size={21} className="text-terong dark:text-terong-light" />
+                  ) : (
+                    <Mail size={21} className="text-terong dark:text-terong-light" />
+                  )}
+                </span>
+                <div className="min-w-0">
+                  <p className="font-bold text-gray-800 dark:text-gray-100 truncate">
+                    {detailTarget.profiles?.name || (detailTarget.role === 'owner' ? 'Anda (Owner)' : 'Staff')}
+                  </p>
+                  <RoleBadge role={detailTarget.role} />
+                </div>
+              </div>
+              <button onClick={() => setDetailTarget(null)} className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
+                <X size={15} />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-gray-100 dark:border-gray-800 pt-4">
+              <div className="flex items-start gap-2.5">
+                <Mail size={15} className="text-gray-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400">Email</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-200 break-all">{detailTarget.email || 'Memuat...'}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <Calendar size={15} className="text-gray-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400">Bergabung sejak</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-200">{fmtDateTime(detailTarget.created_at)}</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-2.5">
+                <LogIn size={15} className="text-gray-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs text-gray-400">Login terakhir</p>
+                  <p className="text-sm text-gray-700 dark:text-gray-200">{fmtDateTime(detailTarget.last_sign_in_at)}</p>
+                </div>
+              </div>
+              {detailTarget.status === 'invited' && (
+                <div className="flex items-center gap-1.5 text-xs text-amber-c bg-amber-soft rounded-lg px-3 py-2 mt-1">
+                  <Clock size={13} /> Undangan masih menunggu diterima
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Konfirmasi hapus staff */}
       {removeTarget && (
