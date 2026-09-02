@@ -249,10 +249,17 @@ export default function SettingsPage() {
             {/* BANTUAN */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
               <SectionHeader icon={BookOpen} title="Bantuan" subtitle="Butuh bantuan menggunakan aplikasi?" iconBg="bg-terong-soft" iconColor="text-terong dark:text-terong-light" />
-              <Link href="/bantuan" className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+              <Link href="/bantuan" className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors mb-2">
                 <div>
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-100">Pusat Bantuan</p>
                   <p className="text-xs text-gray-400 dark:text-gray-500">Pelajari cara menggunakan aplikasi SIMBA</p>
+                </div>
+                <ChevronRight size={16} className="text-gray-400" />
+              </Link>
+              <Link href="/kritik-saran" className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                <div>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">Kritik &amp; Saran</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Punya masukan buat SIMBA? Kabarin kami</p>
                 </div>
                 <ChevronRight size={16} className="text-gray-400" />
               </Link>
@@ -261,26 +268,13 @@ export default function SettingsPage() {
             {/* TENTANG */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 p-5">
               <SectionHeader icon={Info} title="Tentang Aplikasi" subtitle="Informasi tentang aplikasi SIMBA" iconBg="bg-slate-50 dark:bg-slate-900" iconColor="text-slate-600 dark:text-slate-300" />
-              <div className="flex items-center justify-between mb-4">
+              <Link href="/about" className="flex items-center justify-between p-4 border border-gray-100 dark:border-gray-800 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
                 <div>
-                  <p className="font-semibold text-gray-800 dark:text-gray-100">SIMBA</p>
-                  <p className="text-xs text-gray-400 dark:text-gray-500">Sistem Monitoring Barang</p>
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-100">SIMBA v1.0.0</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500">Tech stack, versi, dan kredit developer</p>
                 </div>
-                <span className="bg-terong-soft text-terong dark:text-terong-light text-xs font-semibold px-2.5 py-1 rounded-lg">v1.0.0</span>
-              </div>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mb-3">Dibuat dengan</p>
-              <div className="flex items-center gap-4 flex-wrap">
-                {[
-                  { label: 'Next.js', bg: 'bg-black', text: 'text-white', letter: 'N' },
-                  { label: 'Tailwind CSS', bg: 'bg-teal-500', text: 'text-white', letter: 'T' },
-                  { label: 'Supabase', bg: 'bg-emerald-600', text: 'text-white', letter: 'S' },
-                ].map(({ label, bg, text, letter }) => (
-                  <div key={label} className="flex items-center gap-2">
-                    <div className={`${bg} ${text} text-xs font-bold w-6 h-6 rounded-md flex items-center justify-center shrink-0`}>{letter}</div>
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{label}</span>
-                  </div>
-                ))}
-              </div>
+                <ChevronRight size={16} className="text-gray-400" />
+              </Link>
             </div>
 
           </div>

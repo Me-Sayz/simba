@@ -1,9 +1,10 @@
 'use client'
 import { useState } from 'react'
+import Link from 'next/link'
 import {
   LayoutDashboard, Package, ArrowDownCircle, ArrowUpCircle,
   FileText, Settings, User, Search, ChevronDown, ChevronRight,
-  Lightbulb, CheckCircle2, Info, X, BookOpen, ScanLine, ShoppingCart
+  Lightbulb, CheckCircle2, Info, X, BookOpen, ScanLine, ShoppingCart, QrCode, Users
 } from 'lucide-react'
 import faqs from './faqs.json'
 
@@ -33,7 +34,7 @@ const quickHelp = [
       { step: 2, title: 'Tambah Produk', desc: 'Klik tombol "+" → isi nama, kategori, harga jual, harga beli, stok awal, dan barcode/SKU.' },
       { step: 3, title: 'Scan Barcode', desc: 'Klik ikon kamera di samping input barcode untuk scan barcode dari kemasan produk.' },
       { step: 4, title: 'Upload Foto', desc: 'Klik area foto untuk upload gambar produk dari perangkatmu (opsional).' },
-      { step: 5, title: 'Edit / Hapus', desc: 'Klik ikon pensil untuk edit data produk, atau ikon hapus untuk menghapus (perlu konfirmasi).' },
+      { step: 5, title: 'Edit / Hapus', desc: 'Klik ikon pensil untuk edit data produk, atau ikon hapus untuk menghapus (perlu konfirmasi). Cuma Owner yang bisa akses ini — Staff tidak bisa ubah/hapus produk.' },
       { step: 6, title: 'Search & Filter', desc: 'Gunakan kolom pencarian untuk mencari produk dengan cepat.' },
     ]
   },
@@ -49,7 +50,7 @@ const quickHelp = [
       { step: 3, title: 'Pilih Masuk / Keluar', desc: 'Pilih toggle "Barang Masuk" (restock) atau "Barang Keluar" (rusak, kadaluarsa, dll — bukan penjualan).' },
       { step: 4, title: 'Isi Detail', desc: 'Pilih produk, jumlah, tanggal, dan (untuk Barang Keluar) alasan keluarnya.' },
       { step: 5, title: 'Simpan', desc: 'Stok produk otomatis ter-update sesuai catatan yang disimpan.' },
-      { step: 6, title: 'Edit & Hapus', desc: 'Klik "Edit" atau ikon tempat sampah di tiap baris riwayat untuk ubah/hapus catatan.' },
+      { step: 6, title: 'Edit & Hapus', desc: 'Cuma Owner yang bisa edit/hapus, dan cuma buat catatan yang diinput manual — catatan otomatis dari transaksi Kasir tidak bisa diubah, biar data stok & penjualan tetap sinkron.' },
     ]
   },
   {
@@ -77,8 +78,9 @@ const quickHelp = [
       { step: 2, title: 'Pilih Produk', desc: 'Tap produk di grid "Produk" untuk masukin ke keranjang, atau pakai "Scan" buat scan barcode langsung.' },
       { step: 3, title: 'Scan Berturut-turut', desc: 'Saat scan, produk yang lagi tampil otomatis masuk keranjang begitu kamu scan produk lain. Produk terakhir pakai tombol "Selesai, Masukkan ke Keranjang".' },
       { step: 4, title: 'Cek Keranjang', desc: 'Buka menu "Keranjang" untuk lihat & atur jumlah tiap produk sebelum bayar.' },
-      { step: 5, title: 'Bayar', desc: 'Klik "Bayar Sekarang" → isi jumlah uang yang dibayar → kembalian dihitung otomatis → "Konfirmasi Bayar".' },
-      { step: 6, title: 'Kembali ke Monitoring', desc: 'Buka "Akun" → klik "Kembali ke Mode Monitoring" kapan aja.' },
+      { step: 5, title: 'Bayar', desc: 'Klik "Bayar Sekarang" → pilih metode Tunai atau QRIS (kalau toko sudah aktifin QRIS) → "Konfirmasi Bayar".' },
+      { step: 6, title: 'Bayar Pakai QRIS', desc: 'Pilih tab QRIS → tunjukin QR ke pelanggan buat discan → cek notifikasi pembayaran masuk di aplikasi GoPay Merchant → klik "Sudah Dibayar".' },
+      { step: 7, title: 'Kembali ke Monitoring', desc: 'Buka "Akun" → klik "Kembali ke Mode Monitoring" kapan aja.' },
     ]
   },
   {
@@ -92,7 +94,7 @@ const quickHelp = [
       { step: 2, title: 'Pilih Periode', desc: 'Pilih preset waktu (hari ini, minggu, bulan, tahun) atau gunakan Custom Range.' },
       { step: 3, title: 'Ringkasan', desc: 'Lihat total produk, nilai stok, barang masuk/keluar, dan estimasi keuntungan.' },
       { step: 4, title: 'Grafik & Analisis', desc: 'Grafik menampilkan tren masuk vs keluar. Produk terlaris dan ringkasan alasan keluar juga tersedia.' },
-      { step: 5, title: 'Export PDF', desc: 'Klik "Export PDF" di kanan atas — laporan otomatis terunduh.' },
+      { step: 5, title: 'Export Laporan', desc: 'Klik tombol "Export" di kanan atas → pilih "Export PDF" atau "Export Excel" sesuai kebutuhan.' },
     ]
   },
   {
@@ -108,6 +110,34 @@ const quickHelp = [
       { step: 4, title: 'Minimum Stok Default', desc: 'Atur nilai minimum stok default — otomatis terisi di form tambah produk baru.' },
       { step: 5, title: 'Notifikasi', desc: 'Aktifkan atau nonaktifkan notifikasi untuk: stok menipis, produk baru, barang masuk, dan barang keluar.' },
       { step: 6, title: 'Reset ke Default', desc: 'Klik "Reset ke Default" di kanan atas untuk mengembalikan semua preferensi ke pengaturan awal.' },
+    ]
+  },
+  {
+    icon: QrCode,
+    iconBg: 'bg-terong-soft',
+    iconColor: 'text-terong dark:text-terong-light',
+    title: 'Setup QRIS',
+    desc: 'Terima pembayaran QRIS langsung dari toko sendiri',
+    panduan: [
+      { step: 1, title: 'Buka Akun → Setup QRIS', desc: 'Menu ini cuma muncul buat Owner toko.' },
+      { step: 2, title: 'Upload QRIS Statis', desc: 'Download kode QR statis dari aplikasi GoPay Merchant, lalu upload gambarnya di SIMBA.' },
+      { step: 3, title: 'Konfirmasi', desc: 'Cek nama toko yang kebaca dari QR sudah benar, baru klik "Simpan".' },
+      { step: 4, title: 'Aktifkan', desc: 'Nyalain toggle "Terima Pembayaran QRIS" — metode QRIS langsung muncul di checkout Kasir.' },
+      { step: 5, title: 'Konfirmasi Manual', desc: 'Setiap pembayaran QRIS wajib dikonfirmasi manual di Kasir setelah cek notifikasi masuk di aplikasi GoPay Merchant.' },
+    ]
+  },
+  {
+    icon: Users,
+    iconBg: 'bg-violet-50 dark:bg-violet-950',
+    iconColor: 'text-violet-600 dark:text-violet-400',
+    title: 'Kelola Staff',
+    desc: 'Undang dan kelola staff yang bantu jaga toko',
+    panduan: [
+      { step: 1, title: 'Buka Akun → Kelola Staff', desc: 'Menu ini cuma muncul buat Owner toko.' },
+      { step: 2, title: 'Undang Staff', desc: 'Masukkan email staff → klik "Undang". Staff bakal nerima email undangan.' },
+      { step: 3, title: 'Staff Terima Undangan', desc: 'Staff klik link di email, verifikasi, lalu bikin password sendiri.' },
+      { step: 4, title: 'Lihat Detail', desc: 'Klik salah satu staff di list buat lihat email, tanggal gabung, dan login terakhir.' },
+      { step: 5, title: 'Hapus Staff', desc: 'Klik ikon tempat sampah di baris staff buat cabut aksesnya dari toko.' },
     ]
   },
   {
@@ -138,13 +168,6 @@ const tips = [
   'Gunakan minimum stok untuk mendapatkan notifikasi produk hampir habis.',
   'Lakukan input barang masuk secara rutin agar stok tetap akurat.',
   'Export laporan secara berkala untuk backup data bisnis.',
-]
-
-const techStack = [
-  { label: 'Next.js', bg: 'bg-black', text: 'text-white', letter: 'N' },
-  { label: 'React', bg: 'bg-sky-500', text: 'text-white', letter: 'R' },
-  { label: 'Tailwind', bg: 'bg-teal-500', text: 'text-white', letter: 'T' },
-  { label: 'Supabase', bg: 'bg-emerald-600', text: 'text-white', letter: 'S' },
 ]
 
 export default function BantuanPage() {
@@ -214,87 +237,42 @@ export default function BantuanPage() {
             <div className="w-1 h-5 bg-terong rounded-full" />
             <h3 className="font-semibold text-gray-800 dark:text-gray-100">Panduan Cepat</h3>
           </div>
-          <div className="overflow-x-auto pb-1">
-            <div className="flex gap-3" style={{ width: 'max-content' }}>
-              {filteredCards.map((item) => (
-                <button
-                  key={item.title}
-                  onClick={() => setSelectedGuide(item)}
-                  className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 text-left hover:border-terong/40 hover:shadow-sm transition-all duration-200 flex flex-col gap-2 w-44"
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div className={`${item.iconBg} w-8 h-8 rounded-xl flex items-center justify-center shrink-0`}>
-                      <item.icon size={15} className={item.iconColor} />
-                    </div>
-                    <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-tight">{item.title}</p>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+            {filteredCards.map((item) => (
+              <button
+                key={item.title}
+                onClick={() => setSelectedGuide(item)}
+                className="group bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-4 text-left hover:border-terong/40 hover:shadow-sm transition-all duration-200 flex flex-col gap-2"
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className={`${item.iconBg} w-8 h-8 rounded-xl flex items-center justify-center shrink-0`}>
+                    <item.icon size={15} className={item.iconColor} />
                   </div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed line-clamp-2">{item.desc}</p>
-                </button>
-              ))}
-            </div>
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 leading-tight">{item.title}</p>
+                </div>
+                <p className="text-xs text-gray-400 dark:text-gray-500 leading-relaxed line-clamp-2">{item.desc}</p>
+              </button>
+            ))}
           </div>
           {filteredCards.length === 0 && (
             <p className="text-sm text-gray-400 text-center py-8">Tidak ditemukan panduan untuk "{search}"</p>
           )}
         </section>
 
-        {/* FAQ + Kanan */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-5">
-
-          {/* FAQ — scrollable */}
-          <div className="lg:col-span-1 bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2 shrink-0">
-              <div className="w-1 h-5 bg-terong rounded-full" />
-              <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">FAQ</h3>
-              <span className="ml-auto text-xs text-gray-400">{faqs.length} pertanyaan</span>
-            </div>
-            <div className="overflow-y-auto max-h-[480px] divide-y divide-gray-100 dark:divide-gray-800">
-              {filteredFaqs.map((faq, i) => (
-                <div key={i}>
-                  <button
-                    onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                    className="w-full flex items-start justify-between px-5 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors gap-3"
-                  >
-                    <span className={`text-sm leading-snug flex-1 ${openFaq === i ? 'text-terong dark:text-terong-light font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
-                      {faq.q}
-                    </span>
-                    <ChevronDown
-                      size={14}
-                      className={`shrink-0 text-gray-400 mt-0.5 transition-transform duration-200 ${openFaq === i ? 'rotate-180 text-terong dark:text-terong-light' : ''}`}
-                    />
-                  </button>
-                  {openFaq === i && (
-                    <div className="px-5 pb-4">
-                      <div className="bg-terong-soft rounded-xl p-3">
-                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{faq.a}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))}
-              {filteredFaqs.length === 0 && (
-                <p className="text-sm text-gray-400 text-center py-8">Tidak ditemukan FAQ untuk "{search}"</p>
-              )}
-            </div>
+        {/* Alur Penggunaan */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 mb-5">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-1 h-5 bg-terong rounded-full" />
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100">Alur Penggunaan</h3>
           </div>
-
-          {/* Kolom kanan */}
-          <div className="lg:col-span-2 flex flex-col gap-5">
-
-            {/* Alur Penggunaan */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
-              <div className="flex items-center gap-2 mb-5">
-                <div className="w-1 h-5 bg-terong rounded-full" />
-                <h3 className="font-semibold text-gray-800 dark:text-gray-100">Alur Penggunaan</h3>
-              </div>
-              <div className="hidden sm:flex items-start">
-                {steps.map((step, i) => (
-                  <div key={step.num} className="flex items-start flex-1">
-                    <div className="flex flex-col items-center flex-1">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className={`${step.numBg} text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0`}>{step.num}</span>
-                        <div className={`${step.iconBg} w-9 h-9 rounded-xl flex items-center justify-center`}>
-                          <step.icon size={17} className={step.iconColor} />
+          <div className="hidden sm:flex items-start">
+            {steps.map((step, i) => (
+              <div key={step.num} className="flex items-start flex-1">
+                <div className="flex flex-col items-center flex-1">
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className={`${step.numBg} text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center shrink-0`}>{step.num}</span>
+                    <div className={`${step.iconBg} w-9 h-9 rounded-xl flex items-center justify-center`}>
+                      <step.icon size={17} className={step.iconColor} />
                         </div>
                       </div>
                       <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 text-center mb-1">{step.title}</p>
@@ -330,6 +308,9 @@ export default function BantuanPage() {
               </div>
             </div>
 
+        {/* Tips + Tentang */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
+
             {/* Tips */}
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
               <div className="flex items-center gap-2 mb-4">
@@ -347,36 +328,63 @@ export default function BantuanPage() {
               </div>
             </div>
 
-            {/* Tentang */}
-            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5">
+            {/* Tentang — link ke halaman About, biar gak dobel konten */}
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-5 flex flex-col">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-1 h-5 bg-gray-300 dark:bg-gray-600 rounded-full" />
                 <h3 className="font-semibold text-gray-800 dark:text-gray-100">Tentang Aplikasi</h3>
                 <span className="ml-auto bg-terong-soft text-terong dark:text-terong-light text-xs font-semibold px-2.5 py-1 rounded-lg">v1.0.0</span>
               </div>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-2">Dibuat dengan</p>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {techStack.map(({ label, bg, text, letter }) => (
-                      <div key={label} className="flex items-center gap-1.5">
-                        <div className={`${bg} ${text} text-xs font-bold w-6 h-6 rounded-md flex items-center justify-center shrink-0`}>{letter}</div>
-                        <span className="text-xs text-gray-500 dark:text-gray-400">{label}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="sm:text-right">
-                  <p className="text-xs text-gray-400 dark:text-gray-500 mb-1">Database</p>
-                  <div className="flex items-center gap-1.5 sm:justify-end">
-                    <div className="bg-emerald-600 text-white text-xs font-bold w-6 h-6 rounded-md flex items-center justify-center">S</div>
-                    <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">Supabase</span>
-                    <CheckCircle2 size={14} className="text-emerald-500" />
-                  </div>
-                </div>
+              <div className="flex-1 flex flex-col items-center justify-center text-center py-2">
+                <img src="/logo.png" alt="SIMBA" className="w-14 h-14 mb-3" />
+                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+                  Info lengkap seputar SIMBA — tech stack, versi aplikasi, dan kredit developer.
+                </p>
               </div>
+              <Link
+                href="/about"
+                className="flex items-center justify-center gap-1.5 bg-terong-soft text-terong dark:text-terong-light text-sm font-semibold py-2.5 rounded-xl hover:opacity-90 transition-colors mt-2"
+              >
+                Lihat Detail <ChevronRight size={15} />
+              </Link>
             </div>
 
+        </div>
+
+        {/* FAQ — section sendiri, gak disandingin kolom lain biar gak jomplang tingginya */}
+        <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col overflow-hidden mb-5">
+          <div className="px-5 py-4 border-b border-gray-100 dark:border-gray-800 flex items-center gap-2 shrink-0">
+            <div className="w-1 h-5 bg-terong rounded-full" />
+            <h3 className="font-semibold text-gray-800 dark:text-gray-100 text-sm">FAQ</h3>
+            <span className="ml-auto text-xs text-gray-400">{faqs.length} pertanyaan</span>
+          </div>
+          <div className="divide-y divide-gray-100 dark:divide-gray-800">
+            {filteredFaqs.map((faq, i) => (
+              <div key={i}>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className="w-full flex items-start justify-between px-5 py-3.5 text-left hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors gap-3"
+                >
+                  <span className={`text-sm leading-snug flex-1 ${openFaq === i ? 'text-terong dark:text-terong-light font-medium' : 'text-gray-700 dark:text-gray-300'}`}>
+                    {faq.q}
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    className={`shrink-0 text-gray-400 mt-0.5 transition-transform duration-200 ${openFaq === i ? 'rotate-180 text-terong dark:text-terong-light' : ''}`}
+                  />
+                </button>
+                {openFaq === i && (
+                  <div className="px-5 pb-4">
+                    <div className="bg-terong-soft rounded-xl p-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">{faq.a}</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+            {filteredFaqs.length === 0 && (
+              <p className="text-sm text-gray-400 text-center py-8">Tidak ditemukan FAQ untuk "{search}"</p>
+            )}
           </div>
         </div>
 

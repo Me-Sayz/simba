@@ -1,15 +1,15 @@
 [
   {
     "q": "Bagaimana cara menambah produk?",
-    "a": "Buka menu Produk → klik tombol \"Tambah Produk\" → isi data seperti nama, kategori, harga, dan stok → klik \"Simpan\"."
+    "a": "Buka menu Stok → klik tombol \"+\" → isi data seperti nama, kategori, harga, dan stok → klik \"Simpan\". Fitur ini cuma bisa diakses Owner toko."
   },
   {
     "q": "Kenapa stok tidak bertambah setelah input barang masuk?",
     "a": "Pastikan kamu memilih produk yang benar saat input barang masuk. Cek juga apakah tanggal sudah sesuai. Jika masalah berlanjut, coba refresh halaman."
   },
   {
-    "q": "Bagaimana cara export laporan ke PDF?",
-    "a": "Buka halaman Laporan → pilih rentang tanggal → klik tombol \"Export PDF\" di pojok kanan atas."
+    "q": "Bagaimana cara export laporan?",
+    "a": "Buka halaman Laporan → pilih rentang tanggal → klik tombol \"Export\" di kanan atas → pilih \"Export PDF\" atau \"Export Excel\" sesuai kebutuhan."
   },
   {
     "q": "Apa fungsi minimum stok?",
@@ -21,7 +21,7 @@
   },
   {
     "q": "Bagaimana cara mengedit atau menghapus produk?",
-    "a": "Buka halaman Produk → temukan produk → klik ikon pensil untuk edit atau ikon hapus untuk menghapus."
+    "a": "Buka halaman Stok → temukan produk → klik ikon pensil untuk edit atau ikon hapus untuk menghapus. Fitur ini cuma bisa diakses Owner toko, Staff tidak bisa ubah/hapus data produk."
   },
   {
     "q": "Bagaimana cara scan barcode produk?",
@@ -37,11 +37,11 @@
   },
   {
     "q": "Apa bedanya barang masuk dan barang keluar?",
-    "a": "Barang masuk mencatat penambahan stok seperti restock dari supplier. Barang keluar mencatat pengurangan stok seperti penjualan, kerusakan, atau retur."
+    "a": "Barang masuk mencatat penambahan stok seperti restock dari supplier. Barang keluar mencatat pengurangan stok seperti kerusakan, kadaluarsa, atau retur. Transaksi penjualan lewat Kasir juga otomatis tercatat sebagai barang keluar, jadi tidak perlu diinput manual lagi."
   },
   {
     "q": "Bagaimana cara reset password jika lupa?",
-    "a": "Buka Profil & Akun → Keamanan Akun → Ganti Password → klik \"Lupa password?\" — link reset akan dikirim ke email terdaftar."
+    "a": "Kalau belum login: di halaman Login, klik \"Lupa password?\" → masukkan email terdaftar → cek email untuk link reset password. Kalau lagi login dan cuma mau ganti password (bukan lupa): buka Profil & Akun → Keamanan Akun → Ganti Password."
   },
   {
     "q": "Kenapa estimasi keuntungan di laporan minus?",
@@ -53,10 +53,30 @@
   },
   {
     "q": "Bagaimana cara mengubah satuan default produk?",
-    "a": "Buka Pengaturan → bagian Preferensi → ubah Satuan Default. Satuan ini akan otomatis terisi saat menambah produk baru."
+    "a": "Buka Pengaturan → bagian Preferensi → ubah Satuan Default. Satuan ini akan otomatis terisi saat menambah produk baru. Fitur ini cuma tersedia buat Owner toko."
   },
   {
     "q": "Kenapa notifikasi stok menipis tidak muncul?",
     "a": "Pastikan notifikasi \"Stok Menipis\" sudah diaktifkan di Pengaturan → Notifikasi. Juga pastikan minimum stok produk sudah diisi dengan benar."
+  },
+  {
+    "q": "Bagaimana cara terima pembayaran QRIS di toko?",
+    "a": "Owner perlu setup dulu: buka Akun → Setup QRIS → upload gambar QRIS statis dari aplikasi GoPay Merchant → aktifkan toggle \"Terima Pembayaran QRIS\". Setelah aktif, metode QRIS otomatis muncul di halaman Bayar saat checkout Kasir."
+  },
+  {
+    "q": "Kenapa pembayaran QRIS tidak otomatis terkonfirmasi?",
+    "a": "SIMBA belum terhubung ke payment gateway resmi, jadi konfirmasi pembayaran QRIS harus manual. Cek dulu notifikasi pembayaran masuk di aplikasi GoPay Merchant, baru klik \"Sudah Dibayar\" di SIMBA."
+  },
+  {
+    "q": "Bagaimana cara mengundang staff untuk bantu jaga toko?",
+    "a": "Buka Akun → Kelola Staff (khusus Owner) → masukkan email staff → klik \"Undang\". Staff akan menerima email undangan untuk verifikasi dan membuat password sendiri."
+  },
+  {
+    "q": "Apa bedanya akses Owner dan Staff?",
+    "a": "Owner bisa akses semua fitur termasuk kelola produk, kelola staff, setup QRIS, dan semua laporan. Staff cuma bisa melayani transaksi Kasir, mencatat barang masuk/keluar manual, dan melihat data — tidak bisa mengubah atau menghapus produk maupun data transaksi."
+  },
+  {
+    "q": "Bisa tidak edit atau hapus riwayat stok yang tercatat otomatis dari Kasir?",
+    "a": "Tidak bisa. Catatan stok yang otomatis dibuat dari transaksi Kasir tidak bisa diedit/dihapus manual, supaya data penjualan dan stok tetap sinkron. Yang bisa diedit/dihapus cuma catatan yang diinput manual, dan itu pun hanya bisa dilakukan Owner."
   }
 ]
