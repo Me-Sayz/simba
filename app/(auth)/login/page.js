@@ -3,6 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { Capacitor } from '@capacitor/core'
 
 const ERROR_MESSAGES = {
   oauth_failed: 'Login Google gagal. Coba lagi ya.',
@@ -90,6 +91,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [isNative, setIsNative] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState(() => {
@@ -97,7 +99,12 @@ function LoginForm() {
     return errCode ? (ERROR_MESSAGES[errCode] || 'Terjadi kesalahan, coba lagi.') : ''
   })
 
-  useEffect(() => { setMounted(true) }, [])
+  useEffect(() => {
+    setMounted(true)
+    // Google Sign-In belum jalan normal di dalam APK (WebView), disembunyikan
+    // sementara di native platform sampai flow deep-link-nya dibenerin
+    setIsNative(Capacitor.isNativePlatform())
+  }, [])
 
   async function handleLogin(e) {
     e.preventDefault()
