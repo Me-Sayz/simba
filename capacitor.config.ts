@@ -8,6 +8,9 @@ const config: CapacitorConfig = {
     url: 'https://simbaapp.my.id',
     androidScheme: 'https',
   },
+  android: {
+    appendUserAgent: 'SIMBAAPK',
+  },
 }
 
 export default config

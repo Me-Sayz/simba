@@ -103,7 +103,7 @@ function LoginForm() {
     setMounted(true)
     // Google Sign-In belum jalan normal di dalam APK (WebView), disembunyikan
     // sementara di native platform sampai flow deep-link-nya dibenerin
-    setIsNative(Capacitor.isNativePlatform())
+    setIsNative(navigator.userAgent.includes('SIMBAAPK'))
   }, [])
 
   async function handleLogin(e) {
@@ -718,29 +718,32 @@ function LoginForm() {
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="divider">
-              <div className="divider-line" />
-              <span className="divider-text">atau</span>
-              <div className="divider-line" />
-            </div>
+            {/* Divider + Google — disembunyikan di APK, lihat catatan isNative di atas */}
+            {!isNative && (
+              <>
+                <div className="divider">
+                  <div className="divider-line" />
+                  <span className="divider-text">atau</span>
+                  <div className="divider-line" />
+                </div>
 
-            {/* Google */}
-            <button type="button" className="btn-google" onClick={handleGoogleLogin} disabled={googleLoading}>
-              {googleLoading ? (
-                <div className="spinner-dark" />
-              ) : (
-                <>
-                  <svg width="16" height="16" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.78-2.4 3.63v3.02h3.88c2.27-2.09 3.57-5.17 3.57-8.84z"/>
-                    <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3.02c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.12C3.24 21.3 7.29 24 12 24z"/>
-                    <path fill="#FBBC05" d="M5.27 14.27c-.24-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.62H1.26A11.97 11.97 0 000 12c0 1.94.46 3.77 1.26 5.38l4.01-3.12z"/>
-                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.29 0 3.24 2.7 1.26 6.62l4.01 3.12C6.22 6.86 8.87 4.75 12 4.75z"/>
-                  </svg>
-                  Masuk dengan Google
-                </>
-              )}
-            </button>
+                <button type="button" className="btn-google" onClick={handleGoogleLogin} disabled={googleLoading}>
+                  {googleLoading ? (
+                    <div className="spinner-dark" />
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47c-.28 1.5-1.13 2.78-2.4 3.63v3.02h3.88c2.27-2.09 3.57-5.17 3.57-8.84z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.9l-3.88-3.02c-1.08.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.26v3.12C3.24 21.3 7.29 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.27 14.27c-.24-.72-.38-1.49-.38-2.27s.14-1.55.38-2.27V6.62H1.26A11.97 11.97 0 000 12c0 1.94.46 3.77 1.26 5.38l4.01-3.12z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.44-3.44C17.95 1.19 15.24 0 12 0 7.29 0 3.24 2.7 1.26 6.62l4.01 3.12C6.22 6.86 8.87 4.75 12 4.75z"/>
+                      </svg>
+                      Masuk dengan Google
+                    </>
+                  )}
+                </button>
+              </>
+            )}
 
             {/* Register */}
             <Link href="/register" className="btn-register">
