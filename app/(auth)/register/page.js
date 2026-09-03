@@ -894,7 +894,7 @@ export default function RegisterPage() {
             )}
 
             {/* Login link */}
-            <Link href="/login" className="btn-login-link">
+            <Link href="/login" className="btn-login-link" style={isNative ? { marginTop: '22px' } : undefined}>
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4" />
                 <polyline points="10 17 15 12 10 7" />
