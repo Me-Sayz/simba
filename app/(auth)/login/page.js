@@ -108,11 +108,29 @@ function LoginForm() {
 
   async function handleLogin(e) {
     e.preventDefault()
-    setLoading(true)
     setError('')
+
+    if (!email.trim()) {
+      setError('Email wajib diisi.')
+      return
+    }
+    if (!password) {
+      setError('Password wajib diisi.')
+      return
+    }
+
+    setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError(error.message)
+      if (error.message?.includes('fetch') || error.name === 'AuthRetryableFetchError') {
+        setError('Tidak ada koneksi internet. Periksa koneksi kamu dan coba lagi.')
+      } else if (error.message?.includes('Invalid login credentials')) {
+        setError('Email atau password salah. Coba periksa lagi ya.')
+      } else if (error.message?.includes('Email not confirmed')) {
+        setError('Email kamu belum diverifikasi. Cek inbox/spam buat link verifikasinya.')
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
     } else {
       router.replace('/')

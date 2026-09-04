@@ -114,6 +114,22 @@ export default function RegisterPage() {
     e.preventDefault()
     setError('')
 
+    if (!fullName.trim()) {
+      setError('Nama lengkap wajib diisi.')
+      return
+    }
+    if (!storeName.trim()) {
+      setError('Nama toko wajib diisi.')
+      return
+    }
+    if (!email.trim()) {
+      setError('Email wajib diisi.')
+      return
+    }
+    if (!password) {
+      setError('Password wajib diisi.')
+      return
+    }
     if (password !== confirmPassword) {
       setError('Password dan konfirmasi password tidak cocok.')
       return
@@ -135,10 +151,16 @@ export default function RegisterPage() {
     // profiles + stores + store_members dibuat otomatis oleh trigger handle_new_user()
     // di database begitu auth.users kebentuk, gak perlu insert manual lagi di sini.
     if (error) {
-      setError(error.message)
+      if (error.message?.includes('fetch') || error.name === 'AuthRetryableFetchError') {
+        setError('Tidak ada koneksi internet. Periksa koneksi kamu dan coba lagi.')
+      } else if (error.message?.includes('already registered') || error.message?.includes('already exists')) {
+        setError('Email ini sudah terdaftar. Coba login, atau pakai email lain.')
+      } else {
+        setError(error.message)
+      }
       setLoading(false)
     } else {
-      router.push('/')
+      router.replace('/')
     }
   }
 

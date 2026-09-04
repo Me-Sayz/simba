@@ -1,8 +1,9 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { App } from '@capacitor/app'
+import { Network } from '@capacitor/network'
 import { WifiOff } from 'lucide-react'
 import MonitoringNav from './MonitoringNav'
 import KasirNav from './KasirNav'
@@ -16,27 +17,35 @@ export default function AppShell() {
   const [lowStock, setLowStock] = useState(0)
   const [profile, setProfile] = useState(null)
   const [lastMode, setLastMode] = useState(null)
-  const [isOffline, setIsOffline] = useState(() => typeof navigator !== 'undefined' && !navigator.onLine)
+  const [isOffline, setIsOffline] = useState(false)
 
   const isAuthPage = AUTH_PATHS.includes(pathname)
   const isKasirPath = pathname.startsWith('/kasir')
   const isSharedPath = SHARED_PATHS.some(p => pathname.startsWith(p))
 
+  const isAuthPageRef = useRef(isAuthPage)
+  useEffect(() => { isAuthPageRef.current = isAuthPage }, [isAuthPage])
+
   useEffect(() => {
-    const goOffline = () => setIsOffline(true)
-    const goOnline = () => setIsOffline(false)
-    window.addEventListener('offline', goOffline)
-    window.addEventListener('online', goOnline)
-    return () => {
-      window.removeEventListener('offline', goOffline)
-      window.removeEventListener('online', goOnline)
-    }
+    let listenerHandle
+    // Pakai plugin native @capacitor/network, bukan navigator.onLine/window
+    // 'offline' event browser — event itu gak reliable di Android WebView.
+    // Plugin ini baca status koneksi langsung dari sistem Android.
+    Network.getStatus().then(status => setIsOffline(!status.connected))
+    Network.addListener('networkStatusChange', status => setIsOffline(!status.connected))
+      .then(handle => { listenerHandle = handle })
+    return () => { listenerHandle?.remove() }
   }, [])
 
   useEffect(() => {
     let listenerHandle
     App.addListener('backButton', ({ canGoBack }) => {
-      if (canGoBack) {
+      // Di halaman auth (Login/Register/dst), Back selalu keluar app —
+      // gak peduli history di belakangnya (misal bekas halaman Akun
+      // sebelum logout), karena halaman itu udah gak valid lagi diakses.
+      if (isAuthPageRef.current) {
+        App.exitApp()
+      } else if (canGoBack) {
         window.history.back()
       } else {
         App.exitApp()
