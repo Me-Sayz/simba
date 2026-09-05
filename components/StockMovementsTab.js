@@ -5,6 +5,8 @@ import { addNotification } from '@/lib/notifications'
 import { getStoreContext } from '@/lib/getUser'
 import { inputCls, FieldError } from '@/lib/formHelpers'
 import { Plus, Search, X, Trash2, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
+import { useSupabaseFetch } from '@/lib/useSupabaseFetch'
+import DataErrorState from '@/components/DataErrorState'
 
 const REASONS = ['Terjual', 'Rusak', 'Kadaluarsa', 'Retur', 'Hilang', 'Lainnya']
 
@@ -94,8 +96,13 @@ function ProductSearchSelect({ id, value, onChange, products, placeholder, hasEr
 
 export default function StockMovementsTab() {
   const [products, setProducts] = useState([])
-  const [history, setHistory] = useState([])
-  const [fetching, setFetching] = useState(true)
+  const { data: history, loading: fetching, error, refetch: fetchHistory } = useSupabaseFetch(() =>
+    supabase
+      .from('stock_movements')
+      .select('*, products(name, unit)')
+      .order('created_at', { ascending: false })
+      .limit(150)
+  )
   const [search, setSearch] = useState('')
   const [filterType, setFilterType] = useState('all') // all | in | out
   const [showModal, setShowModal] = useState(false)
@@ -107,22 +114,11 @@ export default function StockMovementsTab() {
   const [toast, setToast] = useState(null)
   const [isOwner, setIsOwner] = useState(false)
 
-  useEffect(() => { fetchProducts(); fetchHistory(); getStoreContext().then(ctx => setIsOwner(!!ctx?.isOwner)) }, [])
+  useEffect(() => { fetchProducts(); getStoreContext().then(ctx => setIsOwner(!!ctx?.isOwner)) }, [])
 
   async function fetchProducts() {
     const { data } = await supabase.from('products').select('id, name, unit, price, stock').order('name')
     setProducts(data || [])
-  }
-
-  async function fetchHistory() {
-    setFetching(true)
-    const { data } = await supabase
-      .from('stock_movements')
-      .select('*, products(name, unit)')
-      .order('created_at', { ascending: false })
-      .limit(150)
-    setHistory(data || [])
-    setFetching(false)
   }
 
   function openAddModal() {
@@ -229,7 +225,7 @@ export default function StockMovementsTab() {
     fetchHistory()
   }
 
-  const filtered = history.filter(h => {
+  const filtered = (history || []).filter(h => {
     if (filterType !== 'all' && h.type !== filterType) return false
     if (search && !h.products?.name?.toLowerCase().includes(search.toLowerCase())) return false
     return true
@@ -276,6 +272,8 @@ export default function StockMovementsTab() {
       <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl overflow-hidden">
         {fetching ? (
           <div className="py-10 text-center text-sm text-gray-400">Memuat...</div>
+        ) : error ? (
+          <DataErrorState onRetry={fetchHistory} />
         ) : filtered.length === 0 ? (
           <div className="py-10 text-center text-sm text-gray-400">Belum ada riwayat pergerakan stok</div>
         ) : (

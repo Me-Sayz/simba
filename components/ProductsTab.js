@@ -8,6 +8,8 @@ import { getStoreContext } from '@/lib/getUser'
 import { inputCls, FieldError } from '@/lib/formHelpers'
 import { deleteImageFromStorage } from '@/lib/productImages'
 import { Search, ScanBarcode, Pencil, Trash2, Plus, Package, ShieldCheck, AlertTriangle, XCircle, X, ChevronDown, Check } from 'lucide-react'
+import { useSupabaseFetch } from '@/lib/useSupabaseFetch'
+import DataErrorState from '@/components/DataErrorState'
 
 const ITEMS_PER_PAGE = 10
 
@@ -563,10 +565,11 @@ function ProductFormDrawer({ editProduct, categories, onClose, onSaved, setToast
 }
 
 export default function ProductsTab() {
-  const [products, setProducts] = useState([])
+  const { data: products, loading: fetching, error, refetch: fetchProducts } = useSupabaseFetch(() =>
+    supabase.from('products').select('*').order('created_at', { ascending: false })
+  )
   const [filtered, setFiltered] = useState([])
   const [editProduct, setEditProduct] = useState(null)
-  const [fetching, setFetching] = useState(true)
   const [showScanner, setShowScanner] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null)
@@ -579,12 +582,25 @@ export default function ProductsTab() {
   const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
-    fetchProducts()
     getStoreContext().then(ctx => setIsOwner(ctx?.isOwner ?? false))
   }, [])
 
+  // Notif stok menipis — jalan tiap kali fetch produk berhasil (mount,
+  // abis hapus, abis simpan form), sama kayak behavior sebelumnya
   useEffect(() => {
-    let result = [...products]
+    if (!products) return
+    const low = products.filter(p => p.stock <= p.min_stock)
+    low.forEach(p => {
+      addNotification({
+        type: 'low_stock',
+        message: `Stok "${p.name}" menipis (${p.stock} ${p.unit || ''} tersisa)`,
+        link: '/stock',
+      })
+    })
+  }, [products])
+
+  useEffect(() => {
+    let result = [...(products || [])]
     if (search) result = result.filter(p =>
       p.name?.toLowerCase().includes(search.toLowerCase()) || p.barcode?.includes(search)
     )
@@ -599,21 +615,6 @@ export default function ProductsTab() {
     setFiltered(result)
     setPage(1)
   }, [products, search, filterStatus, filterCategory, sortBy])
-
-  async function fetchProducts() {
-    setFetching(true)
-    const { data } = await supabase.from('products').select('*').order('created_at', { ascending: false })
-    setProducts(data || [])
-    const low = (data || []).filter(p => p.stock <= p.min_stock)
-    low.forEach(p => {
-      addNotification({
-        type: 'low_stock',
-        message: `Stok "${p.name}" menipis (${p.stock} ${p.unit || ''} tersisa)`,
-        link: '/stock',
-      })
-    })
-    setFetching(false)
-  }
 
   async function handleDelete() {
     if (deleteTarget.image_url) await deleteImageFromStorage(deleteTarget.image_url)
@@ -634,15 +635,15 @@ export default function ProductsTab() {
     setShowForm(false)
   }
 
-  const categories = [...new Set(products.map(p => p.category).filter(Boolean))]
+  const categories = [...new Set((products || []).map(p => p.category).filter(Boolean))]
   const totalPage = Math.ceil(filtered.length / ITEMS_PER_PAGE)
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
   const stats = {
-    total: products.length,
-    aman: products.filter(p => p.stock > p.min_stock).length,
-    rendah: products.filter(p => p.stock > 0 && p.stock <= p.min_stock).length,
-    habis: products.filter(p => p.stock === 0).length,
+    total: (products || []).length,
+    aman: (products || []).filter(p => p.stock > p.min_stock).length,
+    rendah: (products || []).filter(p => p.stock > 0 && p.stock <= p.min_stock).length,
+    habis: (products || []).filter(p => p.stock === 0).length,
   }
 
   function getPaginationPages() {
@@ -779,6 +780,8 @@ export default function ProductsTab() {
         <div className="hidden md:block bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden mb-4">
           {fetching ? (
             <div className="p-10 text-center text-gray-300 text-sm">Memuat data...</div>
+          ) : error ? (
+            <DataErrorState onRetry={fetchProducts} />
           ) : (
             <table className="w-full text-sm">
               <thead className="bg-gray-50 dark:bg-gray-800/60 text-gray-500 dark:text-gray-400 text-xs uppercase tracking-wide">
@@ -849,7 +852,12 @@ export default function ProductsTab() {
           {fetching && (
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-8 text-center text-gray-300 text-sm">Memuat data...</div>
           )}
-          {!fetching && paginated.length === 0 && (
+          {!fetching && error && (
+            <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800">
+              <DataErrorState onRetry={fetchProducts} />
+            </div>
+          )}
+          {!fetching && !error && paginated.length === 0 && (
             <div className="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 p-10 text-center">
               <Package size={40} className="text-gray-200 mx-auto mb-3" />
               <p className="text-gray-400 text-sm">Tidak ada produk</p>

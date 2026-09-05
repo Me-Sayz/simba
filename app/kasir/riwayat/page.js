@@ -1,6 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useSupabaseFetch } from '@/lib/useSupabaseFetch'
+import DataErrorState from '@/components/DataErrorState'
 import { Receipt, History, ChevronRight, Wallet, Banknote, QrCode } from 'lucide-react'
 
 function fmt(n) {
@@ -24,25 +26,17 @@ function PaymentBadge({ method }) {
 }
 
 export default function KasirRiwayatPage() {
-  const [transactions, setTransactions] = useState([])
-  const [fetching, setFetching] = useState(true)
-  const [selected, setSelected] = useState(null)
-  const [items, setItems] = useState([])
-
-  useEffect(() => { fetchToday() }, [])
-
-  async function fetchToday() {
-    setFetching(true)
+  const { data: transactions, loading: fetching, error, refetch } = useSupabaseFetch(() => {
     const startOfDay = new Date()
     startOfDay.setHours(0, 0, 0, 0)
-    const { data } = await supabase
+    return supabase
       .from('transactions')
       .select('*')
       .gte('created_at', startOfDay.toISOString())
       .order('created_at', { ascending: false })
-    setTransactions(data || [])
-    setFetching(false)
-  }
+  })
+  const [selected, setSelected] = useState(null)
+  const [items, setItems] = useState([])
 
   async function openDetail(tx) {
     setSelected(tx)
@@ -50,7 +44,7 @@ export default function KasirRiwayatPage() {
     setItems(data || [])
   }
 
-  const totalToday = transactions.reduce((s, t) => s + t.total_amount, 0)
+  const totalToday = (transactions || []).reduce((s, t) => s + t.total_amount, 0)
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
@@ -60,7 +54,7 @@ export default function KasirRiwayatPage() {
         </div>
         <div>
           <h1 className="font-bold text-lg text-gray-800 dark:text-gray-100">Riwayat Hari Ini</h1>
-          <p className="text-xs text-gray-400">{transactions.length} transaksi tercatat</p>
+          <p className="text-xs text-gray-400">{(transactions || []).length} transaksi tercatat</p>
         </div>
       </div>
 
@@ -76,6 +70,10 @@ export default function KasirRiwayatPage() {
 
       {fetching ? (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl py-12 text-center text-sm text-gray-400">Memuat...</div>
+      ) : error ? (
+        <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl">
+          <DataErrorState onRetry={refetch} />
+        </div>
       ) : transactions.length === 0 ? (
         <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl py-16 text-center">
           <Receipt size={40} className="mx-auto mb-3 text-terong-soft" />

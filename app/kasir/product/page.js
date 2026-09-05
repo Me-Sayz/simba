@@ -1,6 +1,8 @@
 'use client'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { useSupabaseFetch } from '@/lib/useSupabaseFetch'
+import DataErrorState from '@/components/DataErrorState'
 import { useCart } from '@/context/CartContext'
 import { Search, Package } from 'lucide-react'
 
@@ -10,23 +12,15 @@ function fmt(n) {
 
 export default function KasirProductPage() {
   const { cart, addToCart } = useCart()
-  const [products, setProducts] = useState([])
-  const [fetching, setFetching] = useState(true)
+  const { data: products, loading: fetching, error, refetch: fetchProducts } = useSupabaseFetch(() =>
+    supabase.from('products').select('*').order('name')
+  )
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('Semua')
 
-  useEffect(() => { fetchProducts() }, [])
+  const categories = ['Semua', ...new Set((products || []).map(p => p.category).filter(Boolean))]
 
-  async function fetchProducts() {
-    setFetching(true)
-    const { data } = await supabase.from('products').select('*').order('name')
-    setProducts(data || [])
-    setFetching(false)
-  }
-
-  const categories = ['Semua', ...new Set(products.map(p => p.category).filter(Boolean))]
-
-  const filtered = products.filter(p => {
+  const filtered = (products || []).filter(p => {
     if (category !== 'Semua' && p.category !== category) return false
     if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false
     return true
@@ -58,6 +52,8 @@ export default function KasirProductPage() {
 
       {fetching ? (
         <div className="py-16 text-center text-sm text-gray-400">Memuat produk...</div>
+      ) : error ? (
+        <DataErrorState onRetry={fetchProducts} />
       ) : filtered.length === 0 ? (
         <div className="py-16 text-center text-sm text-gray-400">Produk tidak ditemukan</div>
       ) : (

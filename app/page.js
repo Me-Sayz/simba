@@ -6,6 +6,7 @@ import { getStoreContext } from '@/lib/getUser'
 import { Package, ScanLine, Plus, AlertTriangle, TrendingUp, Wallet, Receipt } from 'lucide-react'
 import { BarChart, Bar, XAxis, ResponsiveContainer, Tooltip, Cell } from 'recharts'
 import NotificationPanel from '@/components/NotificationPanel'
+import DataErrorState from '@/components/DataErrorState'
 
 function fmtRupiah(n) {
   const v = n || 0
@@ -89,6 +90,7 @@ export default function Dashboard() {
   const [topProducts, setTopProducts] = useState([])
   const [chartData, setChartData] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
   const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => { fetchProfile() }, [])
@@ -106,16 +108,23 @@ export default function Dashboard() {
 
   async function fetchPeriodData() {
     setLoading(true)
+    setError(null)
     const { start, end } = getPeriodRange(period)
 
-    const { data: productData } = await supabase.from('products').select('*')
-    setProducts(productData || [])
-
-    const { data: txData } = await supabase
+    const { data: productData, error: productError } = await supabase.from('products').select('*')
+    const { data: txData, error: txError } = await supabase
       .from('transactions')
       .select('*')
       .gte('created_at', start.toISOString())
       .lte('created_at', end.toISOString())
+
+    if (productError || txError) {
+      setError(productError || txError)
+      setLoading(false)
+      return
+    }
+
+    setProducts(productData || [])
     setTransactions(txData || [])
 
     // produk terlaris — dari transaction_items yang transaksinya masuk periode ini
@@ -177,6 +186,14 @@ export default function Dashboard() {
   const jumlahTransaksi = transactions.length
 
   if (loading) return <DashboardSkeleton />
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-950 flex items-center justify-center px-6">
+        <DataErrorState onRetry={fetchPeriodData} />
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-gray-950 pb-6">
