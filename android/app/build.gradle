@@ -1,6 +1,12 @@
 apply plugin: 'com.android.application'
 
 android {
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            outputFileName = "SIMBA.apk"
+        }
+    }
+
     namespace = "id.simbaapp.app"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {

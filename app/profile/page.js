@@ -48,6 +48,9 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('')
   const [joinedAt, setJoinedAt] = useState('')
   const [lastSign, setLastSign] = useState('')
+  const [device] = useState(() =>
+    typeof navigator !== 'undefined' && navigator.userAgent.includes('SIMBAAPK') ? 'Aplikasi Android' : 'Browser'
+  )
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
@@ -661,7 +664,7 @@ export default function ProfilePage() {
                 {[
                   { icon: Crown, label: 'Role akun', value: <span className="text-xs font-medium bg-terong-soft text-terong-deep dark:text-terong-light px-2.5 py-1 rounded-full">{isOwner ? 'Owner' : 'Staff'}</span> },
                   { icon: LogIn, label: 'Login terakhir', value: <span className="text-sm text-gray-600 dark:text-gray-300">{lastSign}</span> },
-                  { icon: Monitor, label: 'Perangkat', value: <span className="text-sm text-gray-600 dark:text-gray-300">Browser</span> },
+                  { icon: Monitor, label: 'Perangkat', value: <span className="text-sm text-gray-600 dark:text-gray-300">{device}</span> },
                 ].map(({ icon: Icon, label, value }) => (
                   <div key={label} className="flex items-center gap-3 py-3 first:pt-0 last:pb-0">
                     <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center shrink-0">
