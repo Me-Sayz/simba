@@ -1,101 +1,85 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
+import { BarcodeDetector } from 'barcode-detector/pure'
 import { X, Camera, RefreshCw, Loader2 } from 'lucide-react'
 
+const SUPPORTED_FORMATS = [
+  'ean_13', 'ean_8', 'code_128', 'code_39', 'qr_code', 'upc_a', 'upc_e', 'itf', 'codabar',
+]
+
 export default function BarcodeScanner({ onDetected, onClose, inline = false }) {
-  const scannerRef = useRef(null)
+  const videoRef = useRef(null)
+  const streamRef = useRef(null)
+  const detectorRef = useRef(null)
+  const scanIntervalRef = useRef(null)
+  const detectingRef = useRef(false)
   const onDetectedRef = useRef(onDetected)
   const onCloseRef = useRef(onClose)
-  const [scannerId] = useState(() => 'html5qr-scanner-' + Math.random().toString(36).slice(2))
   const [devices, setDevices] = useState([])
   const [selectedDevice, setSelectedDevice] = useState(null)
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
   const [retrying, setRetrying] = useState(false)
   const [mounted, setMounted] = useState(false)
-  // rasio asli kamera (lebar/tinggi) — begitu ketauan, container kita bikin
-  // rasionya SAMA PERSIS kayak video, jadi gak akan ada sisa ruang kosong
-  // sama sekali (landscape jadi pendek, portrait jadi memanjang ke bawah)
   const [videoAspect, setVideoAspect] = useState(4 / 3)
 
   useEffect(() => { setMounted(true) }, [])
   useEffect(() => { onDetectedRef.current = onDetected }, [onDetected])
   useEffect(() => { onCloseRef.current = onClose }, [onClose])
 
-  async function stopScanner() {
-    if (scannerRef.current) {
-      try {
-        const state = scannerRef.current.getState()
-        if (state === 2 || state === 3) {
-          await scannerRef.current.stop()
-        }
-        scannerRef.current.clear()
-      } catch {}
-      scannerRef.current = null
+  function stopScanner() {
+    if (scanIntervalRef.current) {
+      clearInterval(scanIntervalRef.current)
+      scanIntervalRef.current = null
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop())
+      streamRef.current = null
     }
   }
 
   async function startScanner(deviceId) {
-    await stopScanner()
+    stopScanner()
     setError(null)
     setLoading(true)
     setVideoAspect(4 / 3)
 
     try {
-      const scanner = new Html5Qrcode(scannerId, {
-        formatsToSupport: [
-          Html5QrcodeSupportedFormats.EAN_13,
-          Html5QrcodeSupportedFormats.EAN_8,
-          Html5QrcodeSupportedFormats.CODE_128,
-          Html5QrcodeSupportedFormats.CODE_39,
-          Html5QrcodeSupportedFormats.QR_CODE,
-          Html5QrcodeSupportedFormats.UPC_A,
-          Html5QrcodeSupportedFormats.UPC_E,
-          Html5QrcodeSupportedFormats.ITF,
-          Html5QrcodeSupportedFormats.CODABAR,
-        ],
-        verbose: false,
-      })
-      scannerRef.current = scanner
-
-      const config = {
-        fps: 10,
-        aspectRatio: 1.333,
-        disableFlip: false,
-        videoConstraints: {
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
+      if (!detectorRef.current) {
+        detectorRef.current = new BarcodeDetector({ formats: SUPPORTED_FORMATS })
       }
 
-      await scanner.start(
-        deviceId ? { deviceId: { exact: deviceId } } : { facingMode: 'environment' },
-        config,
-        (decodedText) => {
-          onDetectedRef.current(decodedText)
-          stopScanner()
-          onCloseRef.current()
-        },
-        () => {}
-      )
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: deviceId
+          ? { deviceId: { exact: deviceId }, width: { ideal: 1280 }, height: { ideal: 720 } }
+          : { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
+      })
+      streamRef.current = stream
 
+      const videoEl = videoRef.current
+      if (!videoEl) return
+      videoEl.srcObject = stream
+      await videoEl.play()
+
+      setVideoAspect(videoEl.videoWidth && videoEl.videoHeight ? videoEl.videoWidth / videoEl.videoHeight : 4 / 3)
       setLoading(false)
 
-      // baca rasio ASLI kamera (videoWidth/videoHeight, resolusi sungguhan,
-      // bukan ukuran tampilan) begitu metadata-nya siap — dari situ kita tau
-      // pasti ini landscape atau portrait, terus dipasang ke container
-      const videoEl = document.querySelector(`#${scannerId} video`)
-      if (videoEl) {
-        const applyAspect = () => {
-          if (videoEl.videoWidth && videoEl.videoHeight) {
-            setVideoAspect(videoEl.videoWidth / videoEl.videoHeight)
+      scanIntervalRef.current = setInterval(async () => {
+        if (detectingRef.current || videoEl.readyState < 2) return
+        detectingRef.current = true
+        try {
+          const results = await detectorRef.current.detect(videoEl)
+          if (results.length > 0) {
+            onDetectedRef.current(results[0].rawValue)
+            stopScanner()
+            onCloseRef.current()
           }
+        } catch {
+          // frame gagal dibaca sesekali itu normal, biarin lanjut ke frame berikutnya
         }
-        applyAspect()
-        videoEl.addEventListener('loadedmetadata', applyAspect)
-      }
+        detectingRef.current = false
+      }, 100)
     } catch (err) {
       setLoading(false)
       if (err?.name === 'NotAllowedError' || String(err).includes('Permission')) {
@@ -115,9 +99,15 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
 
     async function init() {
       try {
-        const camDevices = await Html5Qrcode.getCameras()
+        const primer = await navigator.mediaDevices.getUserMedia({ video: true })
+        primer.getTracks().forEach(t => t.stop())
 
         if (cancelled) return
+
+        const allDevices = await navigator.mediaDevices.enumerateDevices()
+        const camDevices = allDevices
+          .filter(d => d.kind === 'videoinput')
+          .map(d => ({ id: d.deviceId, label: d.label }))
 
         if (!camDevices || camDevices.length === 0) {
           setLoading(false)
@@ -143,7 +133,11 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
       } catch (err) {
         if (!cancelled) {
           setLoading(false)
-          setError('Gagal akses kamera: ' + (err?.message || String(err)))
+          if (err?.name === 'NotAllowedError' || String(err).includes('Permission')) {
+            setError('Izin kamera ditolak. Klik ikon kunci di address bar → Site settings → Camera → Allow.')
+          } else {
+            setError('Gagal akses kamera: ' + (err?.message || String(err)))
+          }
         }
       }
     }
@@ -172,7 +166,6 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
     onClose()
   }
 
-  // ============ Viewfinder — dipakai di kedua mode (inline & modal) ============
   function Viewfinder() {
     return (
       <>
@@ -197,9 +190,6 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
         )}
 
         <style jsx>{`
-          /* wrapper ini yang di-animate — tingginya 100% kotak viewfinder,
-             jadi translateY(%) di bawah dihitung dari tinggi kotak itu,
-             bukan dari tinggi garis laser (yg cuma 2px) */
           .scanner-laser-track {
             position: absolute;
             inset: 0;
@@ -215,8 +205,6 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
             background: linear-gradient(90deg, transparent, #A78BFA, transparent);
             box-shadow: 0 0 8px 2px rgba(167, 139, 250, 0.7);
           }
-          /* transform, bukan top — jalan di compositor thread jadi gak
-             rebutan CPU sama proses decode barcode di main thread */
           @keyframes scanMove {
             0%, 100% { transform: translateY(12%); }
             50% { transform: translateY(85%); }
@@ -249,7 +237,6 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
 
   if (!mounted) return null
 
-  // ============ MODE INLINE — nempel langsung di halaman (bukan popup) ============
   if (inline) {
     return (
       <div className="rounded-3xl overflow-hidden bg-black">
@@ -271,17 +258,16 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
         )}
 
         <div
-          className="relative overflow-hidden w-full [&_video]:!w-full [&_video]:!h-full [&_video]:object-cover"
+          className="relative overflow-hidden w-full"
           style={{ aspectRatio: videoAspect, maxHeight: '75vh' }}
         >
-          <div id={scannerId} className="absolute inset-0" />
+          <video ref={videoRef} muted playsInline className="absolute inset-0 w-full h-full object-cover" />
           <Viewfinder />
         </div>
       </div>
     )
   }
 
-  // ============ MODE MODAL — popup, dipakai di form Tambah/Edit Produk ============
   return createPortal(
     <div style={{ zIndex: 99999 }} className="fixed inset-0 bg-black/80 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl">
@@ -314,10 +300,10 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
         )}
 
         <div
-          className="relative mt-3 bg-black overflow-hidden w-full [&_video]:!w-full [&_video]:!h-full [&_video]:object-cover"
+          className="relative mt-3 bg-black overflow-hidden w-full"
           style={{ aspectRatio: videoAspect, maxHeight: '60vh' }}
         >
-          <div id={scannerId} className="absolute inset-0" />
+          <video ref={videoRef} muted playsInline className="absolute inset-0 w-full h-full object-cover" />
           <Viewfinder />
         </div>
 
