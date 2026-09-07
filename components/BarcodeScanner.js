@@ -61,12 +61,13 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
       scannerRef.current = scanner
 
       const config = {
-        fps: 20,
+        fps: 10,
         aspectRatio: 1.333,
         disableFlip: false,
-        experimentalFeatures: {
-          useBarCodeDetectorIfSupported: true
-        }
+        videoConstraints: {
+          width: { ideal: 720 },
+          height: { ideal: 540 },
+        },
       }
 
       await scanner.start(
