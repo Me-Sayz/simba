@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { Device } from '@capacitor/device'
 import { supabase } from '@/lib/supabase'
 import { getStoreContext } from '@/lib/getUser'
 import { useRouter } from 'next/navigation'
@@ -48,7 +49,7 @@ export default function ProfilePage() {
   const [email, setEmail] = useState('')
   const [joinedAt, setJoinedAt] = useState('')
   const [lastSign, setLastSign] = useState('')
-  const [device] = useState(() =>
+  const [device, setDevice] = useState(() =>
     typeof navigator !== 'undefined' && navigator.userAgent.includes('SIMBAAPK') ? 'Aplikasi Android' : 'Browser'
   )
   const [avatarPreview, setAvatarPreview] = useState(null)
@@ -86,6 +87,15 @@ export default function ProfilePage() {
   const [showDeletePw, setShowDeletePw] = useState(false)
 
   useEffect(() => { fetchProfile() }, [])
+
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !navigator.userAgent.includes('SIMBAAPK')) return
+    Device.getInfo().then(info => {
+      const brand = info.manufacturer ? info.manufacturer.charAt(0).toUpperCase() + info.manufacturer.slice(1) : ''
+      const label = `${brand} ${info.model || ''}`.trim()
+      setDevice(label || 'Aplikasi Android')
+    }).catch(() => {})
+  }, [])
 
   async function fetchProfile() {
     setFetching(true)
