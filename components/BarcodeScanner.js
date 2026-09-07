@@ -65,8 +65,8 @@ export default function BarcodeScanner({ onDetected, onClose, inline = false }) 
         aspectRatio: 1.333,
         disableFlip: false,
         videoConstraints: {
-          width: { ideal: 720 },
-          height: { ideal: 540 },
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
         },
       }
 
