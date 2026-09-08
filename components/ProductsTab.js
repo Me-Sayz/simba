@@ -706,7 +706,7 @@ export default function ProductsTab() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Produk</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Total Produk: {products.length.toLocaleString('id-ID')}</p>
+            <p className="text-sm text-gray-500 mt-0.5">Total Produk: {(products || []).length.toLocaleString('id-ID')}</p>
           </div>
           {isOwner && (
             <button
