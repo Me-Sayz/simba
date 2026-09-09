@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import { supabase } from '@/lib/supabase'
 import dynamic from 'next/dynamic'
 const BarcodeScanner = dynamic(() => import('@/components/BarcodeScanner'), { ssr: false })
@@ -568,7 +568,6 @@ export default function ProductsTab() {
   const { data: products, loading: fetching, error, refetch: fetchProducts } = useSupabaseFetch(() =>
     supabase.from('products').select('*').order('created_at', { ascending: false })
   )
-  const [filtered, setFiltered] = useState([])
   const [editProduct, setEditProduct] = useState(null)
   const [showScanner, setShowScanner] = useState(false)
   const [showForm, setShowForm] = useState(false)
@@ -599,7 +598,7 @@ export default function ProductsTab() {
     })
   }, [products])
 
-  useEffect(() => {
+  const filtered = useMemo(() => {
     let result = [...(products || [])]
     if (search) result = result.filter(p =>
       p.name?.toLowerCase().includes(search.toLowerCase()) || p.barcode?.includes(search)
@@ -612,9 +611,12 @@ export default function ProductsTab() {
     if (sortBy === 'stok-asc') result.sort((a, b) => a.stock - b.stock)
     if (sortBy === 'stok-desc') result.sort((a, b) => b.stock - a.stock)
     if (sortBy === 'nama') result.sort((a, b) => a.name.localeCompare(b.name))
-    setFiltered(result)
-    setPage(1)
+    return result
   }, [products, search, filterStatus, filterCategory, sortBy])
+
+  useEffect(() => {
+    setPage(1)
+  }, [search, filterStatus, filterCategory, sortBy])
 
   async function handleDelete() {
     if (deleteTarget.image_url) await deleteImageFromStorage(deleteTarget.image_url)
